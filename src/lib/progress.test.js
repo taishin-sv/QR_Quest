@@ -36,11 +36,11 @@ describe('applyScan', () => {
   it('今のステージ以外・範囲外のカードは無視', () => {
     const p = preset([2, 2]);
     const pr = newProgress();
-    expect(applyScan(p, pr, 1).event).toBe('ignored'); // スタート前
+    expect(applyScan(p, pr, 1)).toEqual({ event: 'ignored', reason: 'notStarted' }); // スタート前
     applyScan(p, pr, 0);
-    expect(applyScan(p, pr, 3).event).toBe('ignored'); // 次ステージのカード
-    expect(applyScan(p, pr, 99).event).toBe('ignored');
-    expect(applyScan(p, pr, 0).event).toBe('ignored'); // スタート再読み取り
+    expect(applyScan(p, pr, 3)).toEqual({ event: 'ignored', reason: 'wrongStage' }); // 次ステージのカード
+    expect(applyScan(p, pr, 99)).toEqual({ event: 'ignored', reason: 'outOfRange' });
+    expect(applyScan(p, pr, 0)).toEqual({ event: 'ignored', reason: 'alreadyStarted' }); // スタート再読み取り
   });
 });
 

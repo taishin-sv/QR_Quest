@@ -501,14 +501,23 @@ function enterPlay() {
   startCamera();
 }
 
+// カメラの起動要求の世代。停止/再起動と競合して遅れて届いたストリームを捨てるために使う
+let camGen = 0;
+
 function startCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     camMsg.textContent = '⚠️ このブラウザではカメラが使えません';
     return;
   }
+  stopCamera();
+  const gen = ++camGen;
   navigator.mediaDevices
     .getUserMedia({ video: { facingMode: 'environment' } })
     .then((s) => {
+      if (gen !== camGen) {
+        s.getTracks().forEach((t) => t.stop());
+        return;
+      }
       stream = s;
       video.srcObject = s;
       video.setAttribute('playsinline', true);
@@ -518,10 +527,11 @@ function startCamera() {
       requestAnimationFrame(scanLoop);
     })
     .catch(() => {
-      camMsg.textContent = '⚠️ カメラを使うには許可が必要です';
+      if (gen === camGen) camMsg.textContent = '⚠️ カメラを使うには許可が必要です';
     });
 }
 function stopCamera() {
+  camGen++;
   scanning = false;
   if (stream) {
     stream.getTracks().forEach((t) => t.stop());
@@ -543,7 +553,14 @@ function scanLoop() {
     } catch (e) {}
     if (code && code.data) {
       const n = parseCard(code.data);
-      if (n !== null && !isRepeat(n)) handleScan(n);
+      if (n === null) {
+        if (!isRepeat(code.data)) {
+          sfx.dup();
+          showToast('🤔 ぼうけんカードの QRじゃないみたい');
+        }
+      } else if (!isRepeat(n)) {
+        handleScan(n);
+      }
     }
   }
   requestAnimationFrame(scanLoop);
@@ -561,7 +578,20 @@ function isRepeat(n) {
 function handleScan(n) {
   const p = activePreset();
   const res = applyScan(p, progress, n);
-  if (res.event === 'ignored') return;
+  if (res.event === 'ignored') {
+    sfx.dup();
+    const cur = progress.currentStage;
+    const r = cur >= 1 && cur <= p.stageCount ? rangeOfStage(p, cur) : null;
+    const want = r ? (r.from === r.to ? '#' + r.from : '#' + r.from + '〜#' + r.to) : '';
+    const msgs = {
+      notStarted: '🚩 さいしょは スタートカードを よみとってね',
+      alreadyStarted: '🚩 スタートは もう よみとったよ',
+      wrongStage: '#' + n + ' は まだ だよ。' + want + ' を さがしてね',
+      outOfRange: '#' + n + ' は このぼうけんの カードじゃないよ',
+    };
+    showToast(msgs[res.reason] || '🤔 このカードは いまは つかえないよ');
+    return;
+  }
   saveJSON(progressKey(), progress);
   renderProgressPanel();
 

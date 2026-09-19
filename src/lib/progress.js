@@ -21,10 +21,10 @@ export function normalizeProgress(p, progress) {
 }
 
 // カードn（0=スタート）を読み取った結果を progress に反映して、何が起きたかを返す。
-// event: 'ignored' | 'start' | 'dup' | 'found' | 'clear' | 'goal'
+// event: 'ignored'(reason: notStarted|alreadyStarted|outOfRange|wrongStage) | 'start' | 'dup' | 'found' | 'clear' | 'goal'
 export function applyScan(p, progress, n) {
   if (n === 0) {
-    if (progress.currentStage !== 0) return { event: 'ignored' };
+    if (progress.currentStage !== 0) return { event: 'ignored', reason: 'alreadyStarted' };
     progress.currentStage = 1;
     progress.found = [];
     normalizeProgress(p, progress);
@@ -32,7 +32,9 @@ export function applyScan(p, progress, n) {
   }
 
   const stage = stageOfCard(p, n);
-  if (stage < 1 || stage !== progress.currentStage || !p.hints[stage]) return { event: 'ignored' };
+  if (progress.currentStage === 0) return { event: 'ignored', reason: 'notStarted' };
+  if (stage < 1 || !p.hints[stage]) return { event: 'ignored', reason: 'outOfRange' };
+  if (stage !== progress.currentStage) return { event: 'ignored', reason: 'wrongStage' };
 
   normalizeProgress(p, progress);
   const g = cardsInStage(p, stage);
