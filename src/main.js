@@ -501,6 +501,10 @@ function enterPlay() {
   startCamera();
 }
 
+// カメラの向き。既定はインカメラ('user')。タブレットで使う想定のため。外側は 'environment'
+const CAM_KEY = 'advcards_cam_v1';
+const camFacing = () => ((loadJSON(CAM_KEY) || {}).facing === 'environment' ? 'environment' : 'user');
+
 // カメラの起動要求の世代。停止/再起動と競合して遅れて届いたストリームを捨てるために使う
 let camGen = 0;
 
@@ -511,8 +515,10 @@ function startCamera() {
   }
   stopCamera();
   const gen = ++camGen;
+  const facing = camFacing();
+  video.classList.toggle('mirror', facing === 'user'); // インカメラは鏡のように表示（読み取りには影響しない）
   navigator.mediaDevices
-    .getUserMedia({ video: { facingMode: 'environment' } })
+    .getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } } })
     .then((s) => {
       if (gen !== camGen) {
         s.getTracks().forEach((t) => t.stop());
@@ -714,6 +720,13 @@ sfxToggle.checked = sfxEnabled();
 sfxToggle.addEventListener('change', () => {
   setSfxEnabled(sfxToggle.checked);
   if (sfxToggle.checked) sfx.clear();
+});
+
+$('camFlipBtn').addEventListener('click', () => {
+  const next = camFacing() === 'user' ? 'environment' : 'user';
+  saveJSON(CAM_KEY, { facing: next });
+  showToast(next === 'user' ? '📷 インカメラ' : '📷 アウトカメラ');
+  startCamera();
 });
 
 // ---------- MENU COLLAPSE (子どもが触っても画面が変わらないように、メニューを隠せる) ----------
