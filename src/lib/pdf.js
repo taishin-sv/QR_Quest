@@ -40,7 +40,7 @@ export async function buildCardEl(number, isStart) {
 
   const cap = document.createElement('div');
   cap.className = 'cap';
-  cap.textContent = isStart ? 'これでぼうけん かいし！' : 'みつけたら すぐ よみとってね！';
+  cap.textContent = isStart ? 'これでぼうけん かいし！' : 'カメラで よみこんでね！';
   el.appendChild(cap);
 
   const trail = document.createElement('div');
