@@ -638,6 +638,8 @@ function showReveal(idx) {
     label.textContent = nr.to > nr.from ? 'つぎは この カードを ぜんぶ さがそう' : 'つぎは この カードを さがそう';
     nextEl.appendChild(label);
     nextEl.appendChild(cardChips(nr.from, nr.to, null));
+    const range = nr.to > nr.from ? '#' + nr.from + '〜#' + nr.to : '#' + nr.from;
+    $('backToScanBtn').textContent = '📷 ' + range + 'の カードを よみこむ';
   }
   // 効果音が終わってから読み上げる
   clearTimeout(speakTimer);
