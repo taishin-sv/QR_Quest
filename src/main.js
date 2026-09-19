@@ -438,32 +438,50 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
 }
 
+// カード番号のチップ。found(i) が true のものは「みつけた」表示
+function cardChips(from, to, found) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chips';
+  for (let n = from; n <= to; n++) {
+    const done = !!(found && found(n - from));
+    const chip = document.createElement('div');
+    chip.className = 'card-chip' + (done ? ' done' : '');
+    chip.textContent = (done ? '✅ ' : '') + '#' + n;
+    wrap.appendChild(chip);
+  }
+  return wrap;
+}
+
 function renderProgressPanel() {
   progressPanel.innerHTML = '';
   const p = activePreset();
-  const g = cardsInStage(p, progress.currentStage);
-  if (progress.currentStage === 0 || g <= 1) {
+  const stage = progress.currentStage;
+  if (stage > p.stageCount) {
     progressPanel.style.display = 'none';
     return;
   }
   progressPanel.style.display = 'flex';
-  const dotsWrap = document.createElement('div');
-  dotsWrap.className = 'progress-dots';
-  let doneCount = 0;
-  for (let i = 0; i < g; i++) {
-    const done = !!progress.found[i];
-    if (done) doneCount++;
-    const dot = document.createElement('div');
-    dot.className = 'progress-dot' + (done ? ' done' : '');
-    dot.textContent = done ? '✅' : '❔';
-    dotsWrap.appendChild(dot);
+
+  const title = document.createElement('div');
+  title.className = 'progress-title';
+  if (stage === 0) {
+    title.textContent = '🚩 まずは スタートカードを よみとってね';
+    progressPanel.appendChild(title);
+    return;
   }
-  progressPanel.appendChild(dotsWrap);
-  const txt = document.createElement('div');
-  txt.className = 'progress-text';
-  const r = rangeOfStage(p, progress.currentStage);
-  txt.textContent = doneCount + ' / ' + g + ' まい みつかった（#' + r.from + '〜#' + r.to + '）';
-  progressPanel.appendChild(txt);
+
+  const r = rangeOfStage(p, stage);
+  const g = r.to - r.from + 1;
+  title.textContent = g > 1 ? 'いま さがす カード（ぜんぶで ' + g + 'まい）' : 'いま さがす カード';
+  progressPanel.appendChild(title);
+  progressPanel.appendChild(cardChips(r.from, r.to, (i) => progress.found[i]));
+  if (g > 1) {
+    const doneCount = progress.found.filter(Boolean).length;
+    const txt = document.createElement('div');
+    txt.className = 'progress-text';
+    txt.textContent = doneCount + ' / ' + g + ' まい みつかった';
+    progressPanel.appendChild(txt);
+  }
 }
 
 function enterPlay() {
@@ -581,6 +599,16 @@ function showReveal(idx) {
   revealEmoji.textContent = h.emoji || (isGoal ? '🏆' : '🧭');
   revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : 'つぎのばしょを さがしてみよう！';
   lastSpokenText = revealText.textContent;
+  const nextEl = $('revealNext');
+  nextEl.innerHTML = '';
+  if (!isGoal) {
+    const nr = rangeOfStage(p, idx + 1);
+    const label = document.createElement('div');
+    label.className = 'progress-title';
+    label.textContent = nr.to > nr.from ? 'つぎは この カードを ぜんぶ さがそう' : 'つぎは この カードを さがそう';
+    nextEl.appendChild(label);
+    nextEl.appendChild(cardChips(nr.from, nr.to, null));
+  }
   // 効果音が終わってから読み上げる
   clearTimeout(speakTimer);
   speakTimer = setTimeout(() => speakText(lastSpokenText), isGoal ? 1900 : idx === 0 ? 800 : 900);
