@@ -128,6 +128,14 @@ video.mirror{ transform:scaleX(-1); }
   background:rgba(0,0,0,0.45); font-size:26px; line-height:1; padding:0; cursor:pointer; }
 .cam-flip:active{ background:rgba(0,0,0,0.7); }
 
+/* ===== ゴールの演出 ===== */
+.goal-banner{ font-size:34px; font-weight:900; color:var(--accent); margin-bottom:6px; animation:banner 1.2s ease-in-out infinite; }
+@keyframes banner{ 0%,100%{ transform:scale(1) rotate(-2deg); } 50%{ transform:scale(1.08) rotate(2deg); } }
+.reveal.goal{ background:linear-gradient(180deg, var(--panel), var(--panel-2)); border-color:var(--amber); border-width:3px; }
+.reveal.goal .big-emoji{ animation:pop 0.5s ease, bounce 1.1s ease-in-out 0.5s infinite; }
+@keyframes bounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-14px) scale(1.06); } }
+@media (prefers-reduced-motion: reduce){ .goal-banner, .reveal.goal .big-emoji{ animation:none; } }
+
 /* ===== メニューの収納（長押しで再表示） ===== */
 .nav-handle{ display:none; position:fixed; left:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:60; width:52px; height:52px; border-radius:50%;
   border:2px solid var(--line); background:var(--panel); color:var(--ink); font-size:22px; opacity:0.55; cursor:pointer; padding:0;
@@ -216,6 +224,7 @@ body.nav-hidden .app{ padding-bottom:88px; }
   .reveal .big-emoji{ font-size:130px; margin-bottom:16px; }
   .reveal .txt{ font-size:32px; }
   .reveal-next .progress-title{ font-size:20px; }
+  .goal-banner{ font-size:48px; }
   .toast{ font-size:18px; padding:14px 26px; }
   body.nav-hidden .app{ padding-left:36px; padding-bottom:28px; }
   .nav-handle{ width:60px; height:60px; font-size:26px; }

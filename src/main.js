@@ -10,6 +10,7 @@ import { rangeOfStage, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './li
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
+import { fx } from './lib/fx.js';
 import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
 import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
@@ -608,16 +609,23 @@ function handleScan(n) {
   }
   if (res.event === 'found') {
     sfx.found();
+    fx.sparkle();
     showToast('✅ #' + n + ' みつけた！ のこり' + res.remaining + 'まい');
     return;
   }
   stopCamera();
   if (res.event === 'start') {
     sfx.start();
+    fx.clear();
   } else {
     showToast(res.multi ? '🎉 ぜんぶ そろった！' : '✅ みつけた！');
-    if (res.event === 'goal') sfx.goal();
-    else sfx.clear();
+    if (res.event === 'goal') {
+      sfx.goal();
+      fx.goal();
+    } else {
+      sfx.clear();
+      fx.clear();
+    }
   }
   showReveal(res.revealIdx);
 }
@@ -632,6 +640,7 @@ function showReveal(idx) {
   $('backToScanBtn').style.display = 'block';
   $('restartBtn').style.display = 'none';
   revealCard.className = 'card reveal' + (isGoal ? ' goal' : '');
+  $('goalBanner').style.display = isGoal ? 'block' : 'none';
   revealEmoji.textContent = h.emoji || (isGoal ? '🏆' : '🧭');
   revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : 'つぎのばしょを さがしてみよう！';
   lastSpokenText = revealText.textContent;
@@ -663,12 +672,14 @@ $('speakBtn').addEventListener('click', () => {
   speakText(lastSpokenText);
 });
 $('backToScanBtn').addEventListener('click', () => {
+  fx.stop();
   playReveal.style.display = 'none';
   playScan.style.display = 'block';
   renderProgressPanel();
   startCamera();
 });
 $('restartBtn').addEventListener('click', () => {
+  fx.stop();
   resetHunt();
   playReveal.style.display = 'none';
   playScan.style.display = 'block';
