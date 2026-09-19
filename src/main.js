@@ -6,9 +6,11 @@ import './style.css';
 import jsQR from 'jsqr';
 import { loadJSON, saveJSON } from './lib/storage.js';
 import { ICONS, HINT_EMOJIS, uid, makeHints, newHint, normalizePreset, loadStore, saveStore as persistStore } from './lib/presets.js';
-import { rangeOfStage, stageOfCard, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './lib/stages.js';
+import { rangeOfStage, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './lib/stages.js';
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
+import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
+import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
 import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
 const $ = (id) => document.getElementById(id);
@@ -16,6 +18,9 @@ const $ = (id) => document.getElementById(id);
 let store = loadStore();
 const saveStore = () => persistStore(store);
 const activePreset = () => store.presets[store.activeId];
+
+// 効果音・読み上げは最初のタップで有効化（iOS等の自動再生制限のため）
+document.addEventListener('pointerdown', unlockAudio, { once: true });
 
 // ---------- NAV ----------
 const navButtons = document.querySelectorAll('.nav button');
@@ -418,17 +423,10 @@ const progressKey = () => 'advcards_progress_' + store.activeId;
 let progress = loadJSON(progressKey()) || { currentStage: 0, found: [] };
 
 function ensureFoundArray() {
-  const g = cardsInStage(activePreset(), progress.currentStage);
-  if (progress.currentStage === 0 || g <= 1) {
-    progress.found = [];
-    return;
-  }
-  if (!progress.found || progress.found.length !== g) {
-    progress.found = Array.from({ length: g }, () => false);
-  }
+  normalizeProgress(activePreset(), progress);
 }
 function resetHunt() {
-  progress = { currentStage: 0, found: [] };
+  progress = newProgress();
   saveJSON(progressKey(), progress);
 }
 
@@ -527,54 +525,50 @@ function scanLoop() {
     } catch (e) {}
     if (code && code.data) {
       const n = parseCard(code.data);
-      if (n !== null) handleScan(n);
+      if (n !== null && !isRepeat(n)) handleScan(n);
     }
   }
   requestAnimationFrame(scanLoop);
 }
 
+// 同じカードをかざし続けても、通知・効果音が連発しないようにする
+let lastScan = { n: null, t: 0 };
+function isRepeat(n) {
+  const now = Date.now();
+  if (n === lastScan.n && now - lastScan.t < 2500) return true;
+  lastScan = { n, t: now };
+  return false;
+}
+
 function handleScan(n) {
   const p = activePreset();
-
-  if (n === 0) {
-    if (progress.currentStage !== 0) return;
-    progress.currentStage = 1;
-    ensureFoundArray();
-    saveJSON(progressKey(), progress);
-    stopCamera();
-    showReveal(0);
-    return;
-  }
-  const stage = stageOfCard(p, n);
-  if (stage < 1 || stage !== progress.currentStage) return;
-  if (!p.hints[stage]) return;
-
-  const g = cardsInStage(p, stage);
-  const r = rangeOfStage(p, stage);
-  const pos = n - r.from;
-  ensureFoundArray();
-  if (progress.found[pos]) {
-    showToast('#' + n + ' は もうみつけてるよ');
-    return;
-  }
-  progress.found[pos] = true;
+  const res = applyScan(p, progress, n);
+  if (res.event === 'ignored') return;
   saveJSON(progressKey(), progress);
   renderProgressPanel();
 
-  const remaining = progress.found.filter((v) => !v).length;
-  if (remaining > 0) {
-    showToast('✅ #' + n + ' みつけた！ のこり' + remaining + 'まい');
+  if (res.event === 'dup') {
+    sfx.dup();
+    showToast('#' + n + ' は もうみつけてるよ');
     return;
   }
-
-  showToast(g > 1 ? '🎉 ぜんぶ そろった！' : '✅ みつけた！');
-  progress.currentStage = stage + 1;
-  ensureFoundArray();
-  saveJSON(progressKey(), progress);
+  if (res.event === 'found') {
+    sfx.found();
+    showToast('✅ #' + n + ' みつけた！ のこり' + res.remaining + 'まい');
+    return;
+  }
   stopCamera();
-  showReveal(stage);
+  if (res.event === 'start') {
+    sfx.start();
+  } else {
+    showToast(res.multi ? '🎉 ぜんぶ そろった！' : '✅ みつけた！');
+    if (res.event === 'goal') sfx.goal();
+    else sfx.clear();
+  }
+  showReveal(res.revealIdx);
 }
 
+let speakTimer;
 function showReveal(idx) {
   const p = activePreset();
   const h = p.hints[idx];
@@ -587,7 +581,9 @@ function showReveal(idx) {
   revealEmoji.textContent = h.emoji || (isGoal ? '🏆' : '🧭');
   revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : 'つぎのばしょを さがしてみよう！';
   lastSpokenText = revealText.textContent;
-  speakText(lastSpokenText);
+  // 効果音が終わってから読み上げる
+  clearTimeout(speakTimer);
+  speakTimer = setTimeout(() => speakText(lastSpokenText), isGoal ? 1900 : idx === 0 ? 800 : 900);
   if (isGoal) {
     $('backToScanBtn').style.display = 'none';
     $('restartBtn').style.display = 'block';
@@ -596,7 +592,10 @@ function showReveal(idx) {
 
 const speakText = speak;
 
-$('speakBtn').addEventListener('click', () => speakText(lastSpokenText));
+$('speakBtn').addEventListener('click', () => {
+  clearTimeout(speakTimer);
+  speakText(lastSpokenText);
+});
 $('backToScanBtn').addEventListener('click', () => {
   playReveal.style.display = 'none';
   playScan.style.display = 'block';
@@ -649,6 +648,13 @@ voiceRate.addEventListener('input', () => {
   saveVoiceSettings({ ...loadVoiceSettings(), rate });
 });
 $('voiceTestBtn').addEventListener('click', () => speak('こんにちは。たまごの、あるところを さがしてね'));
+
+const sfxToggle = $('sfxToggle');
+sfxToggle.checked = sfxEnabled();
+sfxToggle.addEventListener('change', () => {
+  setSfxEnabled(sfxToggle.checked);
+  if (sfxToggle.checked) sfx.clear();
+});
 
 // ---------- INIT ----------
 initVoiceSettings();
