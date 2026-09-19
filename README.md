@@ -32,6 +32,14 @@ npm run icons     # public/icon.svg から PWA アイコンPNGを再生成
 
 ## デプロイ
 
+### GitHub Pages（自動）
+
+`main` にプッシュすると GitHub Actions（`.github/workflows/deploy.yml`）がテスト→ビルド→公開まで行います。
+初回のみ、リポジトリの **Settings → Pages → Source を「GitHub Actions」** に設定してください。
+公開URL: https://taishin-sv.github.io/QR_Quest/
+
+### 自社サーバーなど
+
 `dist/` を静的ホスティング（GitHub Pages / Netlify / Cloudflare Pages 等）に置くだけ。
 `base: './'` の相対パスなのでサブパス配下でも動きます。HTTPS必須（カメラ・Service Worker）。
 
