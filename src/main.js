@@ -23,7 +23,7 @@ const activePreset = () => store.presets[store.activeId];
 document.addEventListener('pointerdown', unlockAudio, { once: true });
 
 // ---------- NAV ----------
-const navButtons = document.querySelectorAll('.nav button');
+const navButtons = document.querySelectorAll('.nav button[data-view]');
 const views = document.querySelectorAll('.view');
 function switchView(name) {
   const navHighlight = name === 'edit' ? 'presets' : name;
@@ -715,6 +715,46 @@ sfxToggle.addEventListener('change', () => {
   setSfxEnabled(sfxToggle.checked);
   if (sfxToggle.checked) sfx.clear();
 });
+
+// ---------- MENU COLLAPSE (子どもが触っても画面が変わらないように、メニューを隠せる) ----------
+// 隠す: メニューの「かくす」。再表示: 左下(タブレットは左下)の 🔒 を長押し。タップだけのときは案内を出す。
+const NAV_KEY = 'advcards_navhidden_v1';
+const LONG_PRESS_MS = 800;
+function setNavHidden(hidden) {
+  document.body.classList.toggle('nav-hidden', hidden);
+  saveJSON(NAV_KEY, { hidden });
+}
+$('navCollapseBtn').addEventListener('click', () => {
+  setNavHidden(true);
+  showToast('🔒 メニューを かくしたよ。ひらくには 🔒 を ながおし');
+});
+{
+  const handle = $('navHandle');
+  let timer = null;
+  const cancel = () => {
+    clearTimeout(timer);
+    timer = null;
+    handle.classList.remove('pressing');
+  };
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handle.classList.add('pressing');
+    timer = setTimeout(() => {
+      cancel();
+      handle.dataset.opened = '1';
+      setNavHidden(false);
+      showToast('🔓 メニューを ひらいたよ');
+      try { navigator.vibrate && navigator.vibrate(30); } catch (err) {}
+    }, LONG_PRESS_MS);
+  });
+  handle.addEventListener('pointerup', () => {
+    if (timer) showToast('🔒 メニューを ひらくには ながおし（ぎゅーっと おしつづける）');
+    cancel();
+  });
+  ['pointercancel', 'pointerleave'].forEach((ev) => handle.addEventListener(ev, cancel));
+  handle.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+if ((loadJSON(NAV_KEY) || {}).hidden) document.body.classList.add('nav-hidden');
 
 // ---------- INIT ----------
 initVoiceSettings();
