@@ -44,6 +44,19 @@
       <button class="ghost" id="importBtn">📥 取り込む</button>
       <p class="muted" id="importMsg" style="min-height:16px;"></p>
     </div>
+
+    <div class="card">
+      <h2>🔊 よみあげの こえ</h2>
+      <p class="muted" style="margin-top:-4px;">
+        ヒントを読み上げる声です。端末にある日本語の声から選べます。聞き取りにくいときは、声を変えたり、ゆっくりにしてみてください。
+      </p>
+      <label for="voiceSelect">こえ</label>
+      <select id="voiceSelect"></select>
+      <label for="voiceRate">はやさ：<span id="voiceRateVal">ゆっくり</span></label>
+      <input type="range" id="voiceRate" min="0.6" max="1.1" step="0.05" value="0.85">
+      <button class="ghost" id="voiceTestBtn">▶ ためしに きく</button>
+      <p class="muted" id="voiceHint" style="min-height:16px;"></p>
+    </div>
   </section>
 
   <!-- ========== EDIT ========== -->

@@ -9,6 +9,7 @@ import { ICONS, HINT_EMOJIS, uid, makeHints, newHint, normalizePreset, loadStore
 import { rangeOfStage, stageOfCard, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './lib/stages.js';
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { exportPdf } from './lib/pdf.js';
+import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -593,16 +594,7 @@ function showReveal(idx) {
   }
 }
 
-function speakText(text) {
-  try {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP';
-    u.rate = 0.95;
-    window.speechSynthesis.speak(u);
-  } catch (e) {}
-}
+const speakText = speak;
 
 $('speakBtn').addEventListener('click', () => speakText(lastSpokenText));
 $('backToScanBtn').addEventListener('click', () => {
@@ -619,7 +611,47 @@ $('restartBtn').addEventListener('click', () => {
   startCamera();
 });
 
+// ---------- VOICE SETTINGS ----------
+const voiceSelect = $('voiceSelect');
+const voiceRate = $('voiceRate');
+const rateLabel = (r) => (r <= 0.75 ? 'とてもゆっくり' : r <= 0.9 ? 'ゆっくり' : r <= 1.0 ? 'ふつう' : 'はやい');
+
+async function initVoiceSettings() {
+  const settings = loadVoiceSettings();
+  voiceRate.value = settings.rate;
+  $('voiceRateVal').textContent = rateLabel(settings.rate);
+  if (!speechSupported()) {
+    $('voiceHint').textContent = '⚠️ この端末では よみあげが つかえません';
+    return;
+  }
+  const voices = await whenVoicesReady();
+  voiceSelect.innerHTML = '';
+  if (!voices.length) {
+    $('voiceHint').textContent = '⚠️ 日本語の声が みつかりません（端末の設定で 日本語の音声を追加できます）';
+    return;
+  }
+  voices.forEach((v, i) => {
+    const o = document.createElement('option');
+    o.value = v.voiceURI;
+    o.textContent = (i === 0 ? '★ ' : '') + v.name;
+    voiceSelect.appendChild(o);
+  });
+  voiceSelect.value = voices.some((v) => v.voiceURI === settings.voiceURI) ? settings.voiceURI : voices[0].voiceURI;
+  $('voiceHint').textContent = '★ は おすすめ（自動で えらばれます）';
+}
+voiceSelect.addEventListener('change', () => {
+  saveVoiceSettings({ ...loadVoiceSettings(), voiceURI: voiceSelect.value });
+  speak('こんにちは。つぎの ばしょを さがしてね');
+});
+voiceRate.addEventListener('input', () => {
+  const rate = parseFloat(voiceRate.value);
+  $('voiceRateVal').textContent = rateLabel(rate);
+  saveVoiceSettings({ ...loadVoiceSettings(), rate });
+});
+$('voiceTestBtn').addEventListener('click', () => speak('こんにちは。たまごの、あるところを さがしてね'));
+
 // ---------- INIT ----------
+initVoiceSettings();
 refreshHeader();
 renderPresets();
 renderEdit();
