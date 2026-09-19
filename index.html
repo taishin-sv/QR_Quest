@@ -63,6 +63,7 @@
   <!-- ========== EDIT ========== -->
   <section id="view-edit" class="view">
     <button class="ghost" id="backToPresetsBtn" style="margin-bottom:4px;">← プリセットにもどる</button>
+    <div class="edit-side">
     <div class="card">
       <h2>🧭 プリセットの設定</h2>
       <label for="presetName">プリセットの なまえ</label>
@@ -78,6 +79,9 @@
       </p>
     </div>
 
+    <button class="primary" id="saveBtn">💾 ほぞんする</button>
+    <p class="muted" id="saveMsg" style="min-height:18px; text-align:center;"></p>
+    </div>
     <div class="card">
       <h2>📝 ヒントをつくる</h2>
       <p class="muted" style="margin-top:-4px;">
@@ -86,8 +90,6 @@
       <div id="stageList"></div>
     </div>
 
-    <button class="primary" id="saveBtn">💾 ほぞんする</button>
-    <p class="muted" id="saveMsg" style="min-height:18px; text-align:center;"></p>
   </section>
 
   <!-- ========== PRINT ========== -->

@@ -122,3 +122,68 @@ video{ width:100%; height:100%; object-fit:cover; display:block; }
   text-align:center; line-height:1.2; box-shadow:0 3px 0 rgba(0,0,0,0.12); }
 .card-chip.done{ background:var(--leaf); color:#fff; box-shadow:none; }
 .reveal-next{ display:flex; flex-direction:column; align-items:center; gap:8px; margin:0 0 6px; }
+
+/* ===== タブレット(横向き)向けレイアウト ===== */
+/* 中間幅(縦向きタブレットなど): 1カラムのまま少し広げる */
+@media (min-width: 700px){
+  .app{ max-width:760px; }
+}
+
+/* 横長・広い画面: 左にナビ、内容は2カラム */
+@media (min-width: 900px){
+  .app{ max-width:none; padding:20px 36px 28px 148px; }
+  header.hero{ max-width:1180px; margin:0 auto; padding-bottom:20px; }
+  header.hero .egg{ font-size:52px; }
+  header.hero h1{ font-size:26px; }
+  header.hero p{ font-size:15px; }
+  .view{ max-width:1180px; margin-left:auto; margin-right:auto; }
+
+  /* ナビは左レール */
+  .nav{ top:0; bottom:0; left:0; right:auto; width:112px; max-width:none; flex-direction:column; justify-content:center; gap:10px;
+    border-top:none; border-right:1px solid var(--line); padding:16px 10px; }
+  .nav button{ flex:0 0 auto; font-size:14px; padding:16px 4px; gap:6px; border-radius:18px; }
+  .nav button .ic{ font-size:32px; }
+
+  .card{ padding:24px; }
+  .card h2{ font-size:19px; }
+  label{ font-size:14px; }
+  .muted{ font-size:14px; }
+  button.primary{ font-size:18px; padding:18px; }
+  button.ghost{ font-size:16px; }
+  button.small{ font-size:14px; padding:10px 14px; }
+  .emoji-btn{ font-size:24px; }
+
+  /* プリセット: 一覧(左) / 共有・こえ(右) */
+  #view-presets.active{ display:grid; grid-template-columns:1fr 1fr; gap:0 20px; align-items:start; }
+  #view-presets > .card:first-child{ grid-row:span 2; }
+
+  /* 編集: 設定(左・固定) / ヒント一覧(右) */
+  #view-edit.active{ display:grid; grid-template-columns:360px 1fr; gap:0 20px; align-items:start; }
+  #view-edit > #backToPresetsBtn{ grid-column:1 / -1; width:auto; justify-self:start; padding:12px 22px; }
+  #view-edit > .edit-side{ grid-column:1; position:sticky; top:16px; }
+  #view-edit > .card{ grid-column:2; }
+
+  /* いんさつ: 設定(左) / プレビュー(右) */
+  #view-print.active{ display:grid; grid-template-columns:360px 1fr; gap:0 20px; align-items:start; }
+  .print-grid{ grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
+
+  /* たんけん: カメラ(左・大きく) / いま さがす カード(右) */
+  #playScan[style*="display: block"]{ display:grid !important; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); grid-template-areas:"scan panel" "scan msg";
+    gap:0 24px; align-items:start; }
+  #playScan .scan-wrap{ grid-area:scan; aspect-ratio:4/3; max-height:calc(100dvh - 130px); width:100%; }
+  #playScan .progress-panel{ grid-area:panel; padding:24px 16px; gap:16px; background:var(--panel); border-radius:22px; border:1px solid var(--line); box-shadow:var(--shadow); }
+  #playScan #camMsg{ grid-area:msg; }
+  .progress-title{ font-size:20px; }
+  .card-chip{ font-size:44px; min-width:96px; padding:12px 24px; border-radius:22px; }
+  .progress-text{ font-size:18px; }
+  .scan-hint{ font-size:18px; }
+
+  /* ヒント表示: カード(左) / ボタン(右) */
+  #playReveal[style*="display: block"]{ display:grid !important; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px 24px; align-items:start; }
+  #playReveal > .reveal{ grid-column:1; grid-row:1 / span 3; padding:44px 24px 30px; margin-bottom:0; }
+  #playReveal > button{ grid-column:2; margin-top:0; }
+  .reveal .big-emoji{ font-size:130px; margin-bottom:16px; }
+  .reveal .txt{ font-size:32px; }
+  .reveal-next .progress-title{ font-size:20px; }
+  .toast{ font-size:18px; padding:14px 26px; }
+}

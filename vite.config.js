@@ -19,7 +19,7 @@ export default defineConfig({
         description: 'QRコードで遊ぶ、親子の宝探しアプリ',
         lang: 'ja',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'any',
         start_url: './',
         scope: './',
         background_color: '#F4ECD8',
