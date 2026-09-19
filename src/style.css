@@ -230,8 +230,6 @@ body.nav-hidden .app{ padding-bottom:88px; }
   .nav-handle{ width:60px; height:60px; font-size:26px; }
 }
 
-.example-btn{ margin-top:8px; }
-#fillExamplesBtn{ margin:0 0 6px; }
 
 /* ミッションの並べ替え・追加・削除 */
 .row-actions{ flex:0 0 auto; display:flex; flex-direction:column; gap:6px; }

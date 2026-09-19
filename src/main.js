@@ -13,7 +13,6 @@ import { exportPdf } from './lib/pdf.js';
 import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
 import { WORDS } from './lib/words.js';
-import { pickExample } from './lib/missions.js';
 import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
 import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
@@ -306,20 +305,6 @@ function renderEdit() {
     });
     body.appendChild(ta);
 
-    if (!isGoal) {
-      const ex = document.createElement('button');
-      ex.type = 'button';
-      ex.className = 'small example-btn';
-      ex.textContent = '💡 ミッションの れいを いれる';
-      ex.addEventListener('click', () => {
-        const e = pickExample(p.hints.map((x) => x.text));
-        h.emoji = e.emoji;
-        h.text = e.text;
-        renderEdit();
-      });
-      body.appendChild(ex);
-    }
-
     row.appendChild(body);
 
     // 並べ替え・削除（ゴールは固定）
@@ -378,17 +363,6 @@ function editAction(fn) {
   pendingFocusRow = r;
   renderEdit();
 }
-
-$('fillExamplesBtn').addEventListener('click', () => {
-  const p = activePreset();
-  p.hints.forEach((h, i) => {
-    if (i === p.hints.length - 1 || (h.text && h.text.trim())) return; // ゴールと入力済みはそのまま
-    const e = pickExample(p.hints.map((x) => x.text));
-    h.emoji = e.emoji;
-    h.text = e.text;
-  });
-  renderEdit();
-});
 
 stageCountEl.addEventListener('input', () => {
   const p = activePreset();
