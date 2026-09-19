@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3F7350">
+<title>ぼうけんカード メーカー</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <span class="egg" id="headerIcon">🧭</span>
+    <div>
+      <h1 id="appTitle">ぼうけんカード</h1>
+      <p id="appSub">QRをよみとって つぎのばしょを さがそう</p>
+    </div>
+  </header>
+
+  <!-- ========== PRESETS ========== -->
+  <section id="view-presets" class="view active">
+    <div class="card">
+      <h2>🎒 プリセット</h2>
+      <p class="muted" style="margin-top:-4px;">
+        テーマや冒険ごとに複数つくれます。今つかっているものが「編集」タブの対象になります。
+      </p>
+      <div id="presetList"></div>
+      <button class="ghost" id="newPresetBtn">＋ 新しいプリセットをつくる</button>
+    </div>
+
+    <div class="card">
+      <h2>🔗 共有する</h2>
+      <p class="muted" style="margin-top:-4px;">
+        いま選んでいるプリセットをテキストで書き出せます。コピーしてLINE等で送れば、相手はそれを貼り付けて取り込めます。
+      </p>
+      <button class="ghost" id="exportBtn">📤 いまのプリセットを書き出す</button>
+      <textarea class="mono" id="exportArea" rows="4" readonly style="display:none; margin-top:8px;"></textarea>
+      <button class="ghost" id="copyExportBtn" style="display:none;">📋 コピーする</button>
+
+      <label style="margin-top:18px;">もらったプリセットを貼り付けて取り込む</label>
+      <textarea class="mono" id="importArea" rows="4" placeholder="ここに共有されたテキストを貼り付け"></textarea>
+      <button class="ghost" id="importBtn">📥 取り込む</button>
+      <p class="muted" id="importMsg" style="min-height:16px;"></p>
+    </div>
+  </section>
+
+  <!-- ========== EDIT ========== -->
+  <section id="view-edit" class="view">
+    <button class="ghost" id="backToPresetsBtn" style="margin-bottom:4px;">← プリセットにもどる</button>
+    <div class="card">
+      <h2>🧭 プリセットの設定</h2>
+      <label for="presetName">プリセットの なまえ</label>
+      <input type="text" id="presetName" placeholder="れい：ゆうた たんけんたい（きょうりゅう）">
+
+      <label>アイコン</label>
+      <div class="emoji-picker" id="iconPicker"></div>
+
+      <div class="row">
+        <div>
+          <label for="stageCount">ヒントのかず（スタートを除く）：<span id="stageCountVal">5</span></label>
+          <input type="number" id="stageCount" min="1" max="15" value="5">
+        </div>
+        <div>
+          <label for="groupSize">1ヒントに集めるカード：<span id="groupSizeVal">1</span>まい</label>
+          <input type="number" id="groupSize" min="1" max="5" value="1">
+        </div>
+      </div>
+      <p class="muted" style="margin:6px 0 0;">
+        カード自体はテーマに関係なく共通の連番です。「いんさつ」タブで必要な枚数だけ書き出せます。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>📝 ヒントをつくる</h2>
+      <p class="muted" style="margin-top:-4px;">
+        「0」はスタート直後のヒント。さいごの番号は「ゴールメッセージ」になります。
+      </p>
+      <div id="stageList"></div>
+    </div>
+
+    <button class="primary" id="saveBtn">💾 ほぞんする</button>
+    <p class="muted" id="saveMsg" style="min-height:18px; text-align:center;"></p>
+  </section>
+
+  <!-- ========== PRINT ========== -->
+  <section id="view-print" class="view">
+    <div class="card">
+      <h2>🖨️ カードをつくる</h2>
+      <p class="muted" style="margin-top:-4px;">
+        あらかじめ0〜100番のQRを用意してあります。必要な枚数だけ選んでPDFに書き出せば、コンビニ印刷にもそのまま出せます。
+      </p>
+      <label for="printCount">なんまい 印刷する？（スタートの1まいは別）</label>
+      <input type="number" id="printCount" min="1" max="100" value="10">
+      <button class="primary amber" id="exportPdfBtn" style="margin-top:14px;">📄 PDFを書き出す</button>
+      <div class="pdf-progress" id="pdfProgress" style="display:none;">
+        <div class="bar"><div class="fill" id="pdfFill"></div></div>
+        <p class="muted" id="pdfStatus" style="text-align:center; margin:6px 0 0;"></p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>👀 プレビュー</h2>
+      <div class="print-grid" id="previewGrid"></div>
+    </div>
+  </section>
+
+  <!-- ========== PLAY ========== -->
+  <section id="view-play" class="view">
+    <div id="playEmpty" class="empty" style="display:none;">
+      <span class="ic">🧭</span>
+      まだヒントが ほぞんされていません。<br>「編集」タブで つくってね。
+    </div>
+
+    <div id="playScan">
+      <div class="progress-panel" id="progressPanel"></div>
+      <div class="scan-wrap">
+        <video id="video" playsinline muted></video>
+        <div class="scan-frame"></div>
+        <div class="scan-hint">📷 カードのQRを わくの中に いれてね</div>
+      </div>
+      <p class="muted" id="camMsg" style="min-height:18px; text-align:center;"></p>
+    </div>
+
+    <div id="playReveal" style="display:none;">
+      <div class="card reveal" id="revealCard">
+        <span class="big-emoji" id="revealEmoji">🦴</span>
+        <div class="txt" id="revealText"></div>
+      </div>
+      <button class="primary amber" id="speakBtn">🔊 もういちど よみあげる</button>
+      <button class="ghost" id="backToScanBtn">📷 つぎのカードをさがしにいく</button>
+      <button class="ghost" id="restartBtn" style="display:none;">🔄 さいしょから あそびなおす</button>
+    </div>
+  </section>
+
+  <nav class="nav">
+    <button data-view="presets" class="active"><span class="ic">🎒</span>プリセット</button>
+    <button data-view="print"><span class="ic">🖨️</span>いんさつ</button>
+    <button data-view="play"><span class="ic">🔎</span>たんけん</button>
+  </nav>
+</div>
+
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
+<div class="toast" id="toast"></div>
+<div id="pdfCardHost"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ぼうけんカード メーカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #F4ECD8; --panel: #FFFBF0; --panel-2: #FFF4DC;
+    --ink: #1F2A1E; --ink-soft: #4B5B45;
+    --accent: #C1502E; --amber: #E8A33D;
+    --leaf: #3F7350; --leaf-dark: #244A34;
+    --line: rgba(31,42,30,0.14); --shadow: 0 10px 28px rgba(36,74,52,0.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg: #0F2119; --panel: #16302A; --panel-2: #1B3A30;
+      --ink: #F4ECD8; --ink-soft: #C9D8C2; --accent: #E8A33D; --amber: #F2B45B;
+      --leaf: #4C7A57; --leaf-dark: #2C4A38;
+      --line: rgba(244,236,216,0.14); --shadow: 0 10px 28px rgba(0,0,0,0.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #0F2119; --panel: #16302A; --panel-2: #1B3A30;
+    --ink: #F4ECD8; --ink-soft: #C9D8C2; --accent: #E8A33D; --amber: #F2B45B;
+    --leaf: #4C7A57; --leaf-dark: #2C4A38;
+    --line: rgba(244,236,216,0.14); --shadow: 0 10px 28px rgba(0,0,0,0.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background: var(--bg); color: var(--ink); font-family:'Zen Maru Gothic',sans-serif; min-height:100dvh; -webkit-tap-highlight-color:transparent; }
+  .app{ max-width:640px; margin:0 auto; padding:18px 16px 100px; min-height:100dvh; }
+  header.hero{ display:flex; align-items:center; gap:12px; padding:10px 4px 18px; }
+  header.hero .egg{ font-size:40px; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
+  header.hero h1{ font-size:20px; font-weight:900; margin:0; line-height:1.3; letter-spacing:0.02em; }
+  header.hero p{ margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); font-weight:500; }
+  .card{ background:var(--panel); border-radius:22px; padding:20px; box-shadow:var(--shadow); border:1px solid var(--line); margin-bottom:16px; }
+  .card h2{ margin:0 0 12px; font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  label{ display:block; font-size:13px; font-weight:700; color:var(--ink-soft); margin:14px 0 6px; }
+  label:first-of-type{margin-top:0;}
+  input[type=text], input[type=number], textarea, select{
+    width:100%; font-family:inherit; font-size:15px; padding:12px 14px; border-radius:14px;
+    border:2px solid var(--line); background:var(--panel-2); color:var(--ink); resize:none;
+  }
+  textarea.mono{ font-family: ui-monospace, monospace; font-size:12px; }
+  input:focus, textarea:focus, select:focus, button:focus-visible{ outline:3px solid var(--amber); outline-offset:1px; }
+  .row{ display:flex; gap:8px; }
+  .row > *{ flex:1; }
+  .stage-row{ display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-top:1px dashed var(--line); }
+  .stage-row:first-of-type{border-top:none;}
+  .stage-num{ flex:0 0 auto; width:44px; height:40px; border-radius:12px; background:var(--leaf); color:#fff; font-weight:900;
+    display:flex; align-items:center; justify-content:center; font-size:12px; text-align:center; line-height:1.1; padding:2px; }
+  .stage-row.goal .stage-num{ background:var(--accent); }
+  .stage-body{flex:1; min-width:0;}
+  .stage-body .stage-label{ font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:4px; }
+  .emoji-picker{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .emoji-btn{ font-size:20px; padding:4px 8px; border-radius:10px; border:2px solid transparent; background:var(--panel-2); cursor:pointer; }
+  .emoji-btn.sel{ border-color:var(--amber); background:var(--bg); }
+  button.primary{ width:100%; font-family:inherit; font-size:16px; font-weight:700; padding:15px; border-radius:16px;
+    border:none; background:var(--leaf); color:#fff; cursor:pointer; box-shadow:var(--shadow); }
+  button.primary.amber{ background:var(--accent); }
+  button.primary:disabled{ opacity:0.5; }
+  button.ghost{ width:100%; font-family:inherit; font-size:15px; font-weight:700; padding:13px; border-radius:16px;
+    border:2px solid var(--line); background:transparent; color:var(--ink); cursor:pointer; margin-top:8px; }
+  button.small{ font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 10px; border-radius:10px;
+    border:2px solid var(--line); background:var(--panel-2); color:var(--ink); cursor:pointer; }
+  .nav{ position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--panel); border-top:1px solid var(--line);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom)); gap:4px; max-width:640px; margin:0 auto; }
+  .nav button{ flex:1; background:none; border:none; font-family:inherit; color:var(--ink-soft); font-size:11px; font-weight:700;
+    padding:8px 2px; border-radius:14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .nav button .ic{font-size:20px;}
+  .nav button.active{ color:var(--leaf); background:var(--panel-2); }
+  .view{display:none;} .view.active{display:block;}
+  .preset-item{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; border:2px solid var(--line);
+    background:var(--panel-2); margin-bottom:10px; }
+  .preset-item.active{ border-color:var(--leaf); background:var(--bg); }
+  .preset-item .p-icon{ font-size:28px; flex:0 0 auto; }
+  .preset-item .p-body{ flex:1; min-width:0; }
+  .preset-item .p-name{ font-weight:700; font-size:15px; }
+  .preset-item .p-meta{ font-size:11.5px; color:var(--ink-soft); }
+  .preset-item .p-actions{ display:flex; flex-direction:column; gap:4px; }
+  .print-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px; }
+  .print-item{ background:#fff; color:#111; border:2px dashed #999; border-radius:12px; padding:8px; text-align:center; font-size:11px; }
+  .print-item .qrbox{ display:flex; justify-content:center; margin-bottom:4px; transform:scale(0.7); }
+  .scan-wrap{ position:relative; border-radius:22px; overflow:hidden; aspect-ratio:3/4; background:#000; box-shadow:var(--shadow); }
+  video{ width:100%; height:100%; object-fit:cover; display:block; }
+  .scan-frame{ position:absolute; inset:14%; border:4px solid var(--amber); border-radius:20px; box-shadow:0 0 0 999px rgba(0,0,0,0.35); }
+  .scan-hint{ position:absolute; bottom:14px; left:0; right:0; text-align:center; color:#fff; font-weight:700; font-size:14px; text-shadow:0 2px 4px rgba(0,0,0,0.6); }
+  .progress-panel{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 10px; margin-bottom:12px; }
+  .progress-dots{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .progress-dot{ width:34px; height:34px; border-radius:50%; background:var(--panel-2); border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .progress-dot.done{ background:var(--leaf); border-color:var(--leaf); color:#fff; }
+  .progress-text{ font-size:13px; font-weight:700; color:var(--ink-soft); }
+  .toast{ position:fixed; top:16px; left:50%; transform:translateX(-50%); background:var(--leaf-dark); color:#fff;
+    padding:10px 18px; border-radius:999px; font-weight:700; font-size:14px; box-shadow:var(--shadow); z-index:50;
+    opacity:0; transition:opacity 0.25s; pointer-events:none; }
+  .toast.show{ opacity:1; }
+  .reveal{ text-align:center; padding:30px 10px 10px; }
+  .reveal .big-emoji{ font-size:84px; display:block; margin-bottom:10px; animation:pop 0.5s ease; }
+  @keyframes pop{ 0%{transform:scale(0.3);opacity:0;} 70%{transform:scale(1.08);opacity:1;} 100%{transform:scale(1);} }
+  .reveal .txt{ font-size:20px; font-weight:700; line-height:1.6; margin:6px 0 20px; }
+  .reveal.goal .txt{ color:var(--accent); }
+  .muted{ color:var(--ink-soft); font-size:13px; }
+  .empty{ text-align:center; padding:30px 10px; color:var(--ink-soft); }
+  .empty .ic{ font-size:48px; display:block; margin-bottom:10px; }
+  .pdf-progress{ margin-top:10px; }
+  .pdf-progress .bar{ height:10px; border-radius:6px; background:var(--panel-2); overflow:hidden; }
+  .pdf-progress .fill{ height:100%; background:var(--leaf); width:0%; transition:width 0.15s; }
+  /* オフスクリーンPDFカード描画用 */
+  #pdfCardHost{ position:fixed; left:-9999px; top:0; }
+  .pdf-card{ width:90mm; height:87mm; background:#FFFBF0; border-radius:6mm; border:1.6mm solid #3F7350; position:relative;
+    font-family:'Zen Maru Gothic',sans-serif; overflow:hidden; }
+  .pdf-card.start{ border-color:#C1502E; }
+  .pdf-card .band{ position:absolute; top:0; left:0; right:0; height:13mm; background:#3F7350; display:flex; align-items:center; justify-content:center; }
+  .pdf-card.start .band{ background:#C1502E; }
+  .pdf-card .band span{ color:#fff; font-weight:700; font-size:6mm; }
+  .pdf-card .badge{ position:absolute; top:5mm; right:4mm; width:20mm; height:20mm; border-radius:50%; background:#E8A33D;
+    display:flex; align-items:center; justify-content:center; font-weight:900; color:#1F2A1E; line-height:1; border:1mm solid #FFFBF0; }
+  .pdf-card .qrwrap{ position:absolute; top:27mm; left:50%; transform:translateX(-50%); width:44mm; height:44mm; background:#fff;
+    border:0.5mm solid #4B5B45; border-radius:2mm; display:flex; align-items:center; justify-content:center; }
+  .pdf-card .qrwrap img{ width:40mm; height:40mm; }
+  .pdf-card .cap{ position:absolute; top:73mm; left:0; right:0; text-align:center; font-size:4.4mm; color:#4B5B45; font-weight:700; }
+  .pdf-card .trail{ position:absolute; top:80mm; left:0; right:0; text-align:center; font-size:5mm; opacity:0.55; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <span class="egg" id="headerIcon">🧭</span>
+    <div>
+      <h1 id="appTitle">ぼうけんカード</h1>
+      <p id="appSub">QRをよみとって つぎのばしょを さがそう</p>
+    </div>
+  </header>
+
+  <!-- ========== PRESETS ========== -->
+  <section id="view-presets" class="view active">
+    <div class="card">
+      <h2>🎒 プリセット</h2>
+      <p class="muted" style="margin-top:-4px;">
+        テーマや冒険ごとに複数つくれます。今つかっているものが「編集」タブの対象になります。
+      </p>
+      <div id="presetList"></div>
+      <button class="ghost" id="newPresetBtn">＋ 新しいプリセットをつくる</button>
+    </div>
+
+    <div class="card">
+      <h2>🔗 共有する</h2>
+      <p class="muted" style="margin-top:-4px;">
+        いま選んでいるプリセットをテキストで書き出せます。コピーしてLINE等で送れば、相手はそれを貼り付けて取り込めます。
+      </p>
+      <button class="ghost" id="exportBtn">📤 いまのプリセットを書き出す</button>
+      <textarea class="mono" id="exportArea" rows="4" readonly style="display:none; margin-top:8px;"></textarea>
+      <button class="ghost" id="copyExportBtn" style="display:none;">📋 コピーする</button>
+
+      <label style="margin-top:18px;">もらったプリセットを貼り付けて取り込む</label>
+      <textarea class="mono" id="importArea" rows="4" placeholder="ここに共有されたテキストを貼り付け"></textarea>
+      <button class="ghost" id="importBtn">📥 取り込む</button>
+      <p class="muted" id="importMsg" style="min-height:16px;"></p>
+    </div>
+  </section>
+
+  <!-- ========== EDIT ========== -->
+  <section id="view-edit" class="view">
+    <button class="ghost" id="backToPresetsBtn" style="margin-bottom:4px;">← プリセットにもどる</button>
+    <div class="card">
+      <h2>🧭 プリセットの設定</h2>
+      <label for="presetName">プリセットの なまえ</label>
+      <input type="text" id="presetName" placeholder="れい：ゆうた たんけんたい（きょうりゅう）">
+
+      <label>アイコン</label>
+      <div class="emoji-picker" id="iconPicker"></div>
+
+      <div class="row">
+        <div>
+          <label for="stageCount">ヒントのかず（スタートを除く）：<span id="stageCountVal">5</span></label>
+          <input type="number" id="stageCount" min="1" max="15" value="5">
+        </div>
+        <div>
+          <label for="groupSize">1ヒントに集めるカード：<span id="groupSizeVal">1</span>まい</label>
+          <input type="number" id="groupSize" min="1" max="5" value="1">
+        </div>
+      </div>
+      <p class="muted" style="margin:6px 0 0;">
+        カード自体はテーマに関係なく共通の連番です。「いんさつ」タブで必要な枚数だけ書き出せます。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>📝 ヒントをつくる</h2>
+      <p class="muted" style="margin-top:-4px;">
+        「0」はスタート直後のヒント。さいごの番号は「ゴールメッセージ」になります。
+      </p>
+      <div id="stageList"></div>
+    </div>
+
+    <button class="primary" id="saveBtn">💾 ほぞんする</button>
+    <p class="muted" id="saveMsg" style="min-height:18px; text-align:center;"></p>
+  </section>
+
+  <!-- ========== PRINT ========== -->
+  <section id="view-print" class="view">
+    <div class="card">
+      <h2>🖨️ カードをつくる</h2>
+      <p class="muted" style="margin-top:-4px;">
+        あらかじめ0〜100番のQRを用意してあります。必要な枚数だけ選んでPDFに書き出せば、コンビニ印刷にもそのまま出せます。
+      </p>
+      <label for="printCount">なんまい 印刷する？（スタートの1まいは別）</label>
+      <input type="number" id="printCount" min="1" max="100" value="10">
+      <button class="primary amber" id="exportPdfBtn" style="margin-top:14px;">📄 PDFを書き出す</button>
+      <div class="pdf-progress" id="pdfProgress" style="display:none;">
+        <div class="bar"><div class="fill" id="pdfFill"></div></div>
+        <p class="muted" id="pdfStatus" style="text-align:center; margin:6px 0 0;"></p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>👀 プレビュー</h2>
+      <div class="print-grid" id="previewGrid"></div>
+    </div>
+  </section>
+
+  <!-- ========== PLAY ========== -->
+  <section id="view-play" class="view">
+    <div id="playEmpty" class="empty" style="display:none;">
+      <span class="ic">🧭</span>
+      まだヒントが ほぞんされていません。<br>「編集」タブで つくってね。
+    </div>
+
+    <div id="playScan">
+      <div class="progress-panel" id="progressPanel"></div>
+      <div class="scan-wrap">
+        <video id="video" playsinline muted></video>
+        <div class="scan-frame"></div>
+        <div class="scan-hint">📷 カードのQRを わくの中に いれてね</div>
+      </div>
+      <p class="muted" id="camMsg" style="min-height:18px; text-align:center;"></p>
+    </div>
+
+    <div id="playReveal" style="display:none;">
+      <div class="card reveal" id="revealCard">
+        <span class="big-emoji" id="revealEmoji">🦴</span>
+        <div class="txt" id="revealText"></div>
+      </div>
+      <button class="primary amber" id="speakBtn">🔊 もういちど よみあげる</button>
+      <button class="ghost" id="backToScanBtn">📷 つぎのカードをさがしにいく</button>
+      <button class="ghost" id="restartBtn" style="display:none;">🔄 さいしょから あそびなおす</button>
+    </div>
+  </section>
+
+  <nav class="nav">
+    <button data-view="presets" class="active"><span class="ic">🎒</span>プリセット</button>
+    <button data-view="print"><span class="ic">🖨️</span>いんさつ</button>
+    <button data-view="play"><span class="ic">🔎</span>たんけん</button>
+  </nav>
+</div>
+
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
+<div class="toast" id="toast"></div>
+<div id="pdfCardHost"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ICONS = ['🧭','🗺️','💎','🔑','🏆','🎁','🕵️','🔦','🪙','⭐','🌟','🎯','🐾','🦕','🏴‍☠️','🚀','🐉','🦉','🌋','🍀'];
+  var HINT_EMOJIS = ['🧭','🗺️','💎','🔑','🏆','🎁','🔦','🪙','⭐','🎯','🐾','🚀','🌋','🍀','🔥','💧'];
+
+  var STORE_KEY = 'advcards_store_v1';
+
+  function loadJSON(key){ try{ var r=localStorage.getItem(key); return r?JSON.parse(r):null; }catch(e){ return null; } }
+  function saveJSON(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; } }
+
+  function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function makeHints(n){
+    var hints=[];
+    for(var i=0;i<=n;i++){ hints.push({ emoji: HINT_EMOJIS[i % HINT_EMOJIS.length], text:'' }); }
+    return hints;
+  }
+
+  function sampleDinoPreset(){
+    var texts = [
+      'たまごの あるところを さがしてね',
+      'つめたいところに かくれているよ',
+      'たかいところを みてみよう',
+      'みずの ちかくを さがしてみて',
+      'まるい ものの なかを のぞいてみて',
+      'やったー！さいごまで たどりついたね！たからものは ひみつきちの中だよ！'
+    ];
+    var hints = [];
+    var emojis = ['🥚','🦴','🌋','💧','🪨','🏆'];
+    for(var i=0;i<texts.length;i++){
+      hints.push({ emoji: emojis[i], text: texts[i] });
+    }
+    return {
+      id: 'sample-dino',
+      name: 'きょうりゅうたんけん（サンプル）',
+      icon: '🦕',
+      stageCount: hints.length-1,
+      groupSize: 1,
+      hints: hints
+    };
+  }
+
+  function loadStore(){
+    var s = loadJSON(STORE_KEY);
+    if(!s || !s.presets || !Object.keys(s.presets).length){
+      var sample = sampleDinoPreset();
+      s = { activeId: sample.id, presets:{} };
+      s.presets[sample.id] = sample;
+      saveJSON(STORE_KEY, s);
+    }
+    if(!s.activeId || !s.presets[s.activeId]){
+      s.activeId = Object.keys(s.presets)[0];
+    }
+    return s;
+  }
+  function saveStore(){ saveJSON(STORE_KEY, store); }
+
+  var store = loadStore();
+
+  function activePreset(){ return store.presets[store.activeId]; }
+
+  function totalCards(p){ return (p.stageCount||1) * (p.groupSize||1); }
+  function rangeOfStage(p, s){ var g=p.groupSize||1; return { from:(s-1)*g+1, to:s*g }; }
+  function stageOfCard(p, n){ return Math.ceil(n/(p.groupSize||1)); }
+
+  // ---------- NAV ----------
+  var navButtons = document.querySelectorAll('.nav button');
+  var views = document.querySelectorAll('.view');
+  function switchView(name){
+    var navHighlight = (name==='edit') ? 'presets' : name;
+    navButtons.forEach(function(b){ b.classList.toggle('active', b.dataset.view===navHighlight); });
+    views.forEach(function(v){ v.classList.toggle('active', v.id==='view-'+name); });
+    if(name==='presets'){ renderPresets(); }
+    if(name==='edit'){ renderEdit(); }
+    if(name==='print'){ renderPreview(); }
+    if(name==='play'){ enterPlay(); }
+    if(name!=='play'){ stopCamera(); }
+  }
+  navButtons.forEach(function(btn){ btn.addEventListener('click', function(){ switchView(btn.dataset.view); }); });
+  document.getElementById('backToPresetsBtn').addEventListener('click', function(){ switchView('presets'); });
+
+  function refreshHeader(){
+    var p = activePreset();
+    document.getElementById('headerIcon').textContent = p.icon || '🧭';
+    document.getElementById('appTitle').textContent = p.name || 'ぼうけんカード';
+  }
+
+  // ---------- PRESETS TAB ----------
+  var presetList = document.getElementById('presetList');
+  function renderPresets(){
+    presetList.innerHTML = '';
+    Object.keys(store.presets).forEach(function(id){
+      var p = store.presets[id];
+      var isActive = id === store.activeId;
+      var item = document.createElement('div');
+      item.className = 'preset-item' + (isActive?' active':'');
+
+      var icon = document.createElement('div');
+      icon.className = 'p-icon';
+      icon.textContent = p.icon || '🧭';
+      item.appendChild(icon);
+
+      var body = document.createElement('div');
+      body.className = 'p-body';
+      var name = document.createElement('div');
+      name.className = 'p-name';
+      name.textContent = p.name || '(無題)';
+      var meta = document.createElement('div');
+      meta.className = 'p-meta';
+      meta.textContent = 'ヒント' + p.stageCount + '個・' + (p.groupSize>1 ? (p.groupSize+'まい協力') : 'ソロ') + (isActive ? '・つかってる' : '');
+      body.appendChild(name); body.appendChild(meta);
+      item.appendChild(body);
+
+      var actions = document.createElement('div');
+      actions.className = 'p-actions';
+      var editBtn = document.createElement('button');
+      editBtn.className = 'small'; editBtn.textContent = '✏️ 編集';
+      editBtn.addEventListener('click', function(){
+        store.activeId = id; saveStore(); refreshHeader();
+        renderEdit(); switchView('edit');
+      });
+      actions.appendChild(editBtn);
+      if(!isActive){
+        var useBtn = document.createElement('button');
+        useBtn.className = 'small'; useBtn.textContent = '切替のみ';
+        useBtn.addEventListener('click', function(){ store.activeId = id; saveStore(); refreshHeader(); renderPresets(); });
+        actions.appendChild(useBtn);
+      }
+      var dupBtn = document.createElement('button');
+      dupBtn.className='small'; dupBtn.textContent='複製';
+      dupBtn.addEventListener('click', function(){
+        var copy = JSON.parse(JSON.stringify(p));
+        copy.id = uid(); copy.name = p.name + '（コピー）';
+        store.presets[copy.id] = copy;
+        store.activeId = copy.id;
+        saveStore(); refreshHeader(); renderPresets();
+      });
+      actions.appendChild(dupBtn);
+      if(Object.keys(store.presets).length > 1){
+        var delBtn = document.createElement('button');
+        delBtn.className='small'; delBtn.textContent='削除';
+        delBtn.addEventListener('click', function(){
+          if(!confirm('「' + p.name + '」を削除しますか？')) return;
+          delete store.presets[id];
+          if(store.activeId === id){ store.activeId = Object.keys(store.presets)[0]; }
+          saveStore(); refreshHeader(); renderPresets();
+        });
+        actions.appendChild(delBtn);
+      }
+      item.appendChild(actions);
+      presetList.appendChild(item);
+    });
+  }
+
+  document.getElementById('newPresetBtn').addEventListener('click', function(){
+    var np = { id:uid(), name:'新しいぼうけん', icon:'🧭', stageCount:5, groupSize:1, hints: makeHints(5) };
+    store.presets[np.id] = np;
+    store.activeId = np.id;
+    saveStore(); refreshHeader(); renderPresets(); switchView('edit');
+  });
+
+  document.getElementById('exportBtn').addEventListener('click', function(){
+    var payload = { advcardsPreset:1, data: activePreset() };
+    var txt = JSON.stringify(payload);
+    var area = document.getElementById('exportArea');
+    area.value = txt;
+    area.style.display = 'block';
+    document.getElementById('copyExportBtn').style.display = 'block';
+  });
+  document.getElementById('copyExportBtn').addEventListener('click', function(){
+    var area = document.getElementById('exportArea');
+    area.select();
+    try{
+      navigator.clipboard.writeText(area.value).then(function(){ showToast('📋 コピーしました'); });
+    }catch(e){
+      try{ document.execCommand('copy'); showToast('📋 コピーしました'); }catch(e2){}
+    }
+  });
+  document.getElementById('importBtn').addEventListener('click', function(){
+    var msg = document.getElementById('importMsg');
+    var raw = document.getElementById('importArea').value.trim();
+    if(!raw){ msg.textContent = '⚠️ テキストを貼り付けてください'; return; }
+    try{
+      var obj = JSON.parse(raw);
+      var data = obj && obj.data ? obj.data : obj;
+      if(!data || !data.hints){ throw new Error('bad shape'); }
+      var np = JSON.parse(JSON.stringify(data));
+      np.id = uid();
+      if(!np.name) np.name = 'インポートしたプリセット';
+      if(!np.icon) np.icon = '🧭';
+      store.presets[np.id] = np;
+      store.activeId = np.id;
+      saveStore(); refreshHeader();
+      msg.textContent = '✅ 「' + np.name + '」を取り込みました';
+      document.getElementById('importArea').value = '';
+      renderPresets();
+    }catch(e){
+      msg.textContent = '⚠️ 読み取れませんでした。テキストを確認してください';
+    }
+  });
+
+  // ---------- EDIT TAB ----------
+  var presetNameEl = document.getElementById('presetName');
+  var iconPicker = document.getElementById('iconPicker');
+  var stageCountEl = document.getElementById('stageCount');
+  var stageCountValEl = document.getElementById('stageCountVal');
+  var groupSizeEl = document.getElementById('groupSize');
+  var groupSizeValEl = document.getElementById('groupSizeVal');
+  var stageListEl = document.getElementById('stageList');
+  var saveBtn = document.getElementById('saveBtn');
+  var saveMsg = document.getElementById('saveMsg');
+
+  function renderEdit(){
+    var p = activePreset();
+    presetNameEl.value = p.name || '';
+    stageCountEl.value = p.stageCount;
+    stageCountValEl.textContent = p.stageCount;
+    groupSizeEl.value = p.groupSize;
+    groupSizeValEl.textContent = p.groupSize;
+
+    iconPicker.innerHTML = '';
+    ICONS.forEach(function(em){
+      var b = document.createElement('button');
+      b.type='button'; b.className='emoji-btn'+(p.icon===em?' sel':'');
+      b.textContent = em;
+      b.addEventListener('click', function(){ p.icon = em; refreshHeader(); renderEdit(); });
+      iconPicker.appendChild(b);
+    });
+
+    stageListEl.innerHTML = '';
+    p.hints.forEach(function(h, idx){
+      var isGoal = (idx === p.hints.length-1);
+      var row = document.createElement('div');
+      row.className = 'stage-row' + (isGoal?' goal':'');
+
+      var numBadge = document.createElement('div');
+      numBadge.className = 'stage-num';
+      if(isGoal){ numBadge.textContent='🏆'; }
+      else if(idx===0){ numBadge.textContent='START'; }
+      else{ var r=rangeOfStage(p, idx); numBadge.textContent = (r.from===r.to)?('#'+r.from):('#'+r.from+'〜'+r.to); }
+      row.appendChild(numBadge);
+
+      var body = document.createElement('div');
+      body.className = 'stage-body';
+      var labelEl = document.createElement('div');
+      labelEl.className = 'stage-label';
+      function cardsPhrase(s){ var r=rangeOfStage(p,s); return (p.groupSize<=1) ? ('カード#'+r.from) : ('カード#'+r.from+'〜#'+r.to+'（'+p.groupSize+'まい全部）'); }
+      labelEl.textContent = isGoal
+        ? 'ゴールメッセージ（'+cardsPhrase(p.hints.length-1)+' を見つけたとき）'
+        : (idx===0 ? 'スタート直後のヒント（つぎ：'+cardsPhrase(1)+' をさがす）'
+                   : cardsPhrase(idx)+' を見つけたときのヒント（つぎ：'+cardsPhrase(idx+1)+' をさがす）');
+      body.appendChild(labelEl);
+
+      var picker = document.createElement('div');
+      picker.className = 'emoji-picker';
+      HINT_EMOJIS.concat(isGoal?['🏆','🎉']:[]).forEach(function(em){
+        var b = document.createElement('button');
+        b.type='button'; b.className='emoji-btn'+(h.emoji===em?' sel':'');
+        b.textContent = em;
+        b.addEventListener('click', function(){ h.emoji=em; renderEdit(); });
+        picker.appendChild(b);
+      });
+      body.appendChild(picker);
+
+      var ta = document.createElement('textarea');
+      ta.rows=2;
+      ta.placeholder = isGoal ? 'れい：やったー！さいごまで たどりついたね！' : 'れい：つめたいところをさがしてね';
+      ta.value = h.text || '';
+      ta.addEventListener('input', function(){ h.text = ta.value; });
+      body.appendChild(ta);
+
+      row.appendChild(body);
+      stageListEl.appendChild(row);
+    });
+  }
+
+  stageCountEl.addEventListener('input', function(){
+    var p = activePreset();
+    var n = Math.max(1, Math.min(15, parseInt(stageCountEl.value||'1',10)));
+    stageCountValEl.textContent = n;
+    var newHints = [];
+    for(var i=0;i<=n;i++){ newHints.push(p.hints[i] || { emoji: HINT_EMOJIS[i%HINT_EMOJIS.length], text:'' }); }
+    p.stageCount = n; p.hints = newHints;
+    renderEdit();
+  });
+  groupSizeEl.addEventListener('input', function(){
+    var p = activePreset();
+    var g = Math.max(1, Math.min(5, parseInt(groupSizeEl.value||'1',10)));
+    groupSizeValEl.textContent = g;
+    p.groupSize = g;
+    renderEdit();
+  });
+
+  saveBtn.addEventListener('click', function(){
+    var p = activePreset();
+    p.name = presetNameEl.value.trim() || p.name;
+    saveStore();
+    resetHunt();
+    refreshHeader();
+    renderPresets();
+    saveMsg.textContent = '✅ ほぞんしました！';
+    setTimeout(function(){ saveMsg.textContent=''; }, 3000);
+  });
+
+  // ---------- PRINT / PDF EXPORT ----------
+  var previewGrid = document.getElementById('previewGrid');
+  var printCountEl = document.getElementById('printCount');
+
+  function qrDataURL(text, size){
+    var div = document.createElement('div');
+    try{
+      new QRCode(div, { text:text, width:size, height:size, colorDark:'#111111', colorLight:'#ffffff' });
+    }catch(e){ return null; }
+    var canvasEl = div.querySelector('canvas');
+    return canvasEl ? canvasEl.toDataURL('image/png') : null;
+  }
+
+  function renderPreview(){
+    previewGrid.innerHTML = '';
+    var n = Math.max(1, Math.min(100, parseInt(printCountEl.value||'10',10)));
+    var showN = Math.min(n, 5);
+    addPreviewItem('🚩 スタート', 'DINOQUEST:0');
+    for(var i=1;i<=showN;i++){ addPreviewItem('#'+i, 'DINOQUEST:'+i); }
+    if(n > showN){
+      var more = document.createElement('div');
+      more.className = 'print-item';
+      more.style.display='flex'; more.style.alignItems='center'; more.style.justifyContent='center';
+      more.textContent = '…ほか' + (n-showN) + 'まい';
+      previewGrid.appendChild(more);
+    }
+  }
+  function addPreviewItem(label, qrText){
+    var item = document.createElement('div');
+    item.className = 'print-item';
+    var qrBox = document.createElement('div');
+    qrBox.className = 'qrbox';
+    item.appendChild(qrBox);
+    var lbl = document.createElement('div');
+    lbl.textContent = label;
+    item.appendChild(lbl);
+    previewGrid.appendChild(item);
+    try{
+      new QRCode(qrBox, { text:qrText, width:90, height:90, colorDark:'#111111', colorLight:'#ffffff' });
+    }catch(e){}
+  }
+  printCountEl.addEventListener('input', renderPreview);
+
+  var pdfCardHost = document.getElementById('pdfCardHost');
+  function buildCardEl(number, isStart){
+    var el = document.createElement('div');
+    el.className = 'pdf-card' + (isStart ? ' start' : '');
+    var band = document.createElement('div'); band.className='band';
+    var bandSpan = document.createElement('span'); bandSpan.textContent = isStart ? 'ぼうけん すたーと' : 'ぼうけんカード';
+    band.appendChild(bandSpan); el.appendChild(band);
+
+    var badge = document.createElement('div'); badge.className='badge';
+    if(isStart){
+      badge.textContent = '🚩';
+      badge.style.fontSize = '10mm';
+    }else{
+      var s = String(number);
+      badge.textContent = s;
+      badge.style.fontSize = (s.length >= 3 ? '7mm' : (s.length === 2 ? '9mm' : '11mm'));
+    }
+    el.appendChild(badge);
+
+    var qrwrap = document.createElement('div'); qrwrap.className='qrwrap';
+    var img = document.createElement('img');
+    img.src = qrDataURL('DINOQUEST:' + (isStart?0:number), 300);
+    qrwrap.appendChild(img);
+    el.appendChild(qrwrap);
+
+    var cap = document.createElement('div'); cap.className='cap';
+    cap.textContent = isStart ? 'これでぼうけん かいし！' : 'みつけたら すぐ よみとってね！';
+    el.appendChild(cap);
+
+    var trail = document.createElement('div'); trail.className='trail';
+    trail.textContent = '👣 👣 👣';
+    el.appendChild(trail);
+
+    return el;
+  }
+
+  document.getElementById('exportPdfBtn').addEventListener('click', function(){
+    exportPdf();
+  });
+
+  function exportPdf(){
+    var n = Math.max(1, Math.min(100, parseInt(printCountEl.value||'10',10)));
+    var progWrap = document.getElementById('pdfProgress');
+    var fill = document.getElementById('pdfFill');
+    var status = document.getElementById('pdfStatus');
+    progWrap.style.display = 'block';
+    fill.style.width = '0%';
+    status.textContent = '準備中...';
+    document.getElementById('exportPdfBtn').disabled = true;
+
+    var items = [{num:0, start:true}];
+    for(var i=1;i<=n;i++){ items.push({num:i, start:false}); }
+    var total = items.length;
+
+    var jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
+    if(!jsPDFCtor || typeof html2canvas === 'undefined'){
+      status.textContent = '⚠️ PDF機能を読み込めませんでした。通信環境を確認してください。';
+      document.getElementById('exportPdfBtn').disabled = false;
+      return;
+    }
+    var doc = new jsPDFCtor({ unit:'mm', format:'a4' });
+    var pageW = 210, pageH = 297;
+    var cols=2, rows=3, margin=10, gap=7;
+    var cardW = (pageW - 2*margin - (cols-1)*gap)/cols;
+    var cardH = (pageH - 2*margin - (rows-1)*gap)/rows;
+    var perPage = cols*rows;
+
+    var i = 0;
+    function step(){
+      if(i >= total){
+        doc.save('bouken-cards.pdf');
+        status.textContent = '✅ 完成！ダウンロードされたPDFをコンビニ印刷などに出してください。';
+        fill.style.width = '100%';
+        document.getElementById('exportPdfBtn').disabled = false;
+        pdfCardHost.innerHTML = '';
+        return;
+      }
+      var it = items[i];
+      var el = buildCardEl(it.num, it.start);
+      pdfCardHost.innerHTML = '';
+      pdfCardHost.appendChild(el);
+
+      html2canvas(el, { scale:3, backgroundColor:null }).then(function(canvasEl){
+        var imgData = canvasEl.toDataURL('image/png');
+        var posInPage = i % perPage;
+        if(i>0 && posInPage===0){ doc.addPage(); }
+        var col = posInPage % cols, row = Math.floor(posInPage/cols);
+        var x = margin + col*(cardW+gap);
+        var y = margin + row*(cardH+gap);
+        doc.addImage(imgData, 'PNG', x, y, cardW, cardH);
+
+        i++;
+        fill.style.width = Math.round((i/total)*100) + '%';
+        status.textContent = i + ' / ' + total + ' まい 作成中...';
+        setTimeout(step, 10);
+      }).catch(function(err){
+        status.textContent = '⚠️ 途中でエラーが発生しました（' + (i+1) + 'まい目）';
+        document.getElementById('exportPdfBtn').disabled = false;
+      });
+    }
+    step();
+  }
+
+  // ---------- PLAY ----------
+  var playEmpty = document.getElementById('playEmpty');
+  var playScan = document.getElementById('playScan');
+  var playReveal = document.getElementById('playReveal');
+  var video = document.getElementById('video');
+  var canvas = document.getElementById('hiddenCanvas');
+  var camMsg = document.getElementById('camMsg');
+  var revealEmoji = document.getElementById('revealEmoji');
+  var revealText = document.getElementById('revealText');
+  var revealCard = document.getElementById('revealCard');
+  var progressPanel = document.getElementById('progressPanel');
+  var toastEl = document.getElementById('toast');
+
+  var stream=null, scanning=false, lastSpokenText='';
+
+  function progressKey(){ return 'advcards_progress_' + store.activeId; }
+  var progress = loadJSON(progressKey()) || { currentStage:0, found:[] };
+
+  function ensureFoundArray(){
+    var p = activePreset();
+    var g = p.groupSize || 1;
+    if(progress.currentStage===0 || g<=1){ progress.found=[]; return; }
+    if(!progress.found || progress.found.length!==g){
+      var arr=[]; for(var i=0;i<g;i++) arr.push(false);
+      progress.found = arr;
+    }
+  }
+  function resetHunt(){ progress = { currentStage:0, found:[] }; saveJSON(progressKey(), progress); }
+
+  function showToast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ toastEl.classList.remove('show'); }, 1600);
+  }
+
+  function renderProgressPanel(){
+    progressPanel.innerHTML = '';
+    var p = activePreset();
+    var g = p.groupSize || 1;
+    if(progress.currentStage===0 || g<=1){ progressPanel.style.display='none'; return; }
+    progressPanel.style.display='flex';
+    var dotsWrap = document.createElement('div'); dotsWrap.className='progress-dots';
+    var doneCount=0;
+    for(var i=0;i<g;i++){
+      var done = !!progress.found[i]; if(done) doneCount++;
+      var dot = document.createElement('div');
+      dot.className = 'progress-dot'+(done?' done':'');
+      dot.textContent = done?'✅':'❔';
+      dotsWrap.appendChild(dot);
+    }
+    progressPanel.appendChild(dotsWrap);
+    var txt = document.createElement('div'); txt.className='progress-text';
+    var r = rangeOfStage(p, progress.currentStage);
+    txt.textContent = doneCount+' / '+g+' まい みつかった（#'+r.from+'〜#'+r.to+'）';
+    progressPanel.appendChild(txt);
+  }
+
+  function enterPlay(){
+    progress = loadJSON(progressKey()) || { currentStage:0, found:[] };
+    var p = activePreset();
+    if(!p || !p.hints || !p.hints.length){
+      playEmpty.style.display='block'; playScan.style.display='none'; playReveal.style.display='none';
+      return;
+    }
+    ensureFoundArray();
+    playEmpty.style.display='none';
+    playScan.style.display='block';
+    playReveal.style.display='none';
+    renderProgressPanel();
+    startCamera();
+  }
+
+  function startCamera(){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      camMsg.textContent = '⚠️ このブラウザではカメラが使えません'; return;
+    }
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } }).then(function(s){
+      stream=s; video.srcObject=s; video.setAttribute('playsinline',true); video.play();
+      scanning=true; camMsg.textContent='';
+      requestAnimationFrame(scanLoop);
+    }).catch(function(){ camMsg.textContent = '⚠️ カメラを使うには許可が必要です'; });
+  }
+  function stopCamera(){ scanning=false; if(stream){ stream.getTracks().forEach(function(t){t.stop();}); stream=null; } }
+
+  function scanLoop(){
+    if(!scanning) return;
+    if(video.readyState===video.HAVE_ENOUGH_DATA){
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      var imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      var code=null;
+      try{ code=jsQR(imgData.data, imgData.width, imgData.height); }catch(e){}
+      if(code && code.data && code.data.indexOf('DINOQUEST:')===0){ handleScanValue(code.data); }
+    }
+    requestAnimationFrame(scanLoop);
+  }
+
+  function handleScanValue(data){
+    var p = activePreset();
+    var n = parseInt(data.split(':')[1],10);
+    if(isNaN(n)) return;
+
+    if(n===0){
+      if(progress.currentStage!==0) return;
+      progress.currentStage=1; ensureFoundArray(); saveJSON(progressKey(), progress);
+      scanning=false; stopCamera(); showReveal(0);
+      return;
+    }
+    var stage = stageOfCard(p, n);
+    if(stage !== progress.currentStage) return;
+    if(!p.hints[stage]) return;
+
+    var g = p.groupSize||1;
+    var r = rangeOfStage(p, stage);
+    var pos = n - r.from;
+    ensureFoundArray();
+    if(progress.found[pos]){ showToast('#'+n+' は もうみつけてるよ'); return; }
+    progress.found[pos]=true;
+    saveJSON(progressKey(), progress);
+    renderProgressPanel();
+
+    var remaining = progress.found.filter(function(v){return !v;}).length;
+    if(remaining>0){ showToast('✅ #'+n+' みつけた！ のこり'+remaining+'まい'); return; }
+
+    showToast(g>1 ? '🎉 ぜんぶ そろった！' : '✅ みつけた！');
+    var finishedStage = stage;
+    progress.currentStage = finishedStage+1;
+    ensureFoundArray();
+    saveJSON(progressKey(), progress);
+    scanning=false; stopCamera();
+    showReveal(finishedStage);
+  }
+
+  function showReveal(idx){
+    var p = activePreset();
+    var h = p.hints[idx];
+    var isGoal = (idx === p.hints.length-1);
+    playScan.style.display='none'; playReveal.style.display='block';
+    document.getElementById('backToScanBtn').style.display='block';
+    document.getElementById('restartBtn').style.display='none';
+    revealCard.className='card reveal'+(isGoal?' goal':'');
+    revealEmoji.textContent = h.emoji || (isGoal?'🏆':'🧭');
+    revealText.textContent = (h.text && h.text.trim()) ? h.text : (isGoal?'やったー！ゴールだよ！':'つぎのばしょを さがしてみよう！');
+    lastSpokenText = revealText.textContent;
+    speakText(lastSpokenText);
+    if(isGoal){
+      document.getElementById('backToScanBtn').style.display='none';
+      document.getElementById('restartBtn').style.display='block';
+    }
+  }
+
+  function speakText(text){
+    try{
+      if(!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang='ja-JP'; u.rate=0.95;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  document.getElementById('speakBtn').addEventListener('click', function(){ speakText(lastSpokenText); });
+  document.getElementById('backToScanBtn').addEventListener('click', function(){
+    playReveal.style.display='none'; playScan.style.display='block';
+    renderProgressPanel(); scanning=true; startCamera();
+  });
+  document.getElementById('restartBtn').addEventListener('click', function(){
+    resetHunt();
+    playReveal.style.display='none'; playScan.style.display='block';
+    renderProgressPanel(); scanning=true; startCamera();
+  });
+
+  // ---------- INIT ----------
+  refreshHeader();
+  renderPresets();
+  renderEdit();
+  renderPreview();
+
+})();
+</script>
+</body>
+</html>

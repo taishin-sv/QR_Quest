@@ -1,0 +1,118 @@
+:root{
+  --bg: #F4ECD8; --panel: #FFFBF0; --panel-2: #FFF4DC;
+  --ink: #1F2A1E; --ink-soft: #4B5B45;
+  --accent: #C1502E; --amber: #E8A33D;
+  --leaf: #3F7350; --leaf-dark: #244A34;
+  --line: rgba(31,42,30,0.14); --shadow: 0 10px 28px rgba(36,74,52,0.16);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg: #0F2119; --panel: #16302A; --panel-2: #1B3A30;
+    --ink: #F4ECD8; --ink-soft: #C9D8C2; --accent: #E8A33D; --amber: #F2B45B;
+    --leaf: #4C7A57; --leaf-dark: #2C4A38;
+    --line: rgba(244,236,216,0.14); --shadow: 0 10px 28px rgba(0,0,0,0.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg: #0F2119; --panel: #16302A; --panel-2: #1B3A30;
+  --ink: #F4ECD8; --ink-soft: #C9D8C2; --accent: #E8A33D; --amber: #F2B45B;
+  --leaf: #4C7A57; --leaf-dark: #2C4A38;
+  --line: rgba(244,236,216,0.14); --shadow: 0 10px 28px rgba(0,0,0,0.45);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{ background: var(--bg); color: var(--ink); font-family:'Zen Maru Gothic',sans-serif; min-height:100dvh; -webkit-tap-highlight-color:transparent; }
+.app{ max-width:640px; margin:0 auto; padding:18px 16px 100px; min-height:100dvh; }
+header.hero{ display:flex; align-items:center; gap:12px; padding:10px 4px 18px; }
+header.hero .egg{ font-size:40px; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.15)); }
+header.hero h1{ font-size:20px; font-weight:900; margin:0; line-height:1.3; letter-spacing:0.02em; }
+header.hero p{ margin:2px 0 0; font-size:12.5px; color:var(--ink-soft); font-weight:500; }
+.card{ background:var(--panel); border-radius:22px; padding:20px; box-shadow:var(--shadow); border:1px solid var(--line); margin-bottom:16px; }
+.card h2{ margin:0 0 12px; font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px; }
+label{ display:block; font-size:13px; font-weight:700; color:var(--ink-soft); margin:14px 0 6px; }
+label:first-of-type{margin-top:0;}
+input[type=text], input[type=number], textarea, select{
+  width:100%; font-family:inherit; font-size:15px; padding:12px 14px; border-radius:14px;
+  border:2px solid var(--line); background:var(--panel-2); color:var(--ink); resize:none;
+}
+textarea.mono{ font-family: ui-monospace, monospace; font-size:12px; }
+input:focus, textarea:focus, select:focus, button:focus-visible{ outline:3px solid var(--amber); outline-offset:1px; }
+.row{ display:flex; gap:8px; }
+.row > *{ flex:1; }
+.stage-row{ display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-top:1px dashed var(--line); }
+.stage-row:first-of-type{border-top:none;}
+.stage-num{ flex:0 0 auto; width:44px; height:40px; border-radius:12px; background:var(--leaf); color:#fff; font-weight:900;
+  display:flex; align-items:center; justify-content:center; font-size:12px; text-align:center; line-height:1.1; padding:2px; }
+.stage-row.goal .stage-num{ background:var(--accent); }
+.stage-body{flex:1; min-width:0;}
+.stage-body .stage-label{ font-size:12px; color:var(--ink-soft); font-weight:700; margin-bottom:4px; }
+.emoji-picker{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.emoji-btn{ font-size:20px; padding:4px 8px; border-radius:10px; border:2px solid transparent; background:var(--panel-2); cursor:pointer; }
+.emoji-btn.sel{ border-color:var(--amber); background:var(--bg); }
+button.primary{ width:100%; font-family:inherit; font-size:16px; font-weight:700; padding:15px; border-radius:16px;
+  border:none; background:var(--leaf); color:#fff; cursor:pointer; box-shadow:var(--shadow); }
+button.primary.amber{ background:var(--accent); }
+button.primary:disabled{ opacity:0.5; }
+button.ghost{ width:100%; font-family:inherit; font-size:15px; font-weight:700; padding:13px; border-radius:16px;
+  border:2px solid var(--line); background:transparent; color:var(--ink); cursor:pointer; margin-top:8px; }
+button.small{ font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 10px; border-radius:10px;
+  border:2px solid var(--line); background:var(--panel-2); color:var(--ink); cursor:pointer; }
+.nav{ position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--panel); border-top:1px solid var(--line);
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom)); gap:4px; max-width:640px; margin:0 auto; }
+.nav button{ flex:1; background:none; border:none; font-family:inherit; color:var(--ink-soft); font-size:11px; font-weight:700;
+  padding:8px 2px; border-radius:14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.nav button .ic{font-size:20px;}
+.nav button.active{ color:var(--leaf); background:var(--panel-2); }
+.view{display:none;} .view.active{display:block;}
+.preset-item{ display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; border:2px solid var(--line);
+  background:var(--panel-2); margin-bottom:10px; }
+.preset-item.active{ border-color:var(--leaf); background:var(--bg); }
+.preset-item .p-icon{ font-size:28px; flex:0 0 auto; }
+.preset-item .p-body{ flex:1; min-width:0; }
+.preset-item .p-name{ font-weight:700; font-size:15px; }
+.preset-item .p-meta{ font-size:11.5px; color:var(--ink-soft); }
+.preset-item .p-actions{ display:flex; flex-direction:column; gap:4px; }
+.print-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:14px; }
+.print-item{ background:#fff; color:#111; border:2px dashed #999; border-radius:12px; padding:8px; text-align:center; font-size:11px; }
+.print-item .qrbox{ display:flex; justify-content:center; margin-bottom:4px; transform:scale(0.7); }
+.scan-wrap{ position:relative; border-radius:22px; overflow:hidden; aspect-ratio:3/4; background:#000; box-shadow:var(--shadow); }
+video{ width:100%; height:100%; object-fit:cover; display:block; }
+.scan-frame{ position:absolute; inset:14%; border:4px solid var(--amber); border-radius:20px; box-shadow:0 0 0 999px rgba(0,0,0,0.35); }
+.scan-hint{ position:absolute; bottom:14px; left:0; right:0; text-align:center; color:#fff; font-weight:700; font-size:14px; text-shadow:0 2px 4px rgba(0,0,0,0.6); }
+.progress-panel{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 10px; margin-bottom:12px; }
+.progress-dots{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.progress-dot{ width:34px; height:34px; border-radius:50%; background:var(--panel-2); border:2px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-size:16px; }
+.progress-dot.done{ background:var(--leaf); border-color:var(--leaf); color:#fff; }
+.progress-text{ font-size:13px; font-weight:700; color:var(--ink-soft); }
+.toast{ position:fixed; top:16px; left:50%; transform:translateX(-50%); background:var(--leaf-dark); color:#fff;
+  padding:10px 18px; border-radius:999px; font-weight:700; font-size:14px; box-shadow:var(--shadow); z-index:50;
+  opacity:0; transition:opacity 0.25s; pointer-events:none; }
+.toast.show{ opacity:1; }
+.reveal{ text-align:center; padding:30px 10px 10px; }
+.reveal .big-emoji{ font-size:84px; display:block; margin-bottom:10px; animation:pop 0.5s ease; }
+@keyframes pop{ 0%{transform:scale(0.3);opacity:0;} 70%{transform:scale(1.08);opacity:1;} 100%{transform:scale(1);} }
+.reveal .txt{ font-size:20px; font-weight:700; line-height:1.6; margin:6px 0 20px; }
+.reveal.goal .txt{ color:var(--accent); }
+.muted{ color:var(--ink-soft); font-size:13px; }
+.empty{ text-align:center; padding:30px 10px; color:var(--ink-soft); }
+.empty .ic{ font-size:48px; display:block; margin-bottom:10px; }
+.pdf-progress{ margin-top:10px; }
+.pdf-progress .bar{ height:10px; border-radius:6px; background:var(--panel-2); overflow:hidden; }
+.pdf-progress .fill{ height:100%; background:var(--leaf); width:0%; transition:width 0.15s; }
+/* オフスクリーンPDFカード描画用 */
+#pdfCardHost{ position:fixed; left:-9999px; top:0; }
+/* はがきサイズ(100x148mm)のラミネートポーチに収まる縦長カード。寸法は src/lib/pdf.js の CARD_MM と一致させること */
+.pdf-card{ width:94mm; height:140mm; background:#FFFBF0; border-radius:6mm; border:1.6mm solid #3F7350; position:relative;
+  font-family:'Zen Maru Gothic',sans-serif; overflow:hidden; }
+.pdf-card.start{ border-color:#C1502E; }
+.pdf-card .band{ position:absolute; top:0; left:0; right:0; height:18mm; background:#3F7350; display:flex; align-items:center; justify-content:center; }
+.pdf-card.start .band{ background:#C1502E; }
+.pdf-card .band span{ color:#fff; font-weight:700; font-size:6.5mm; }
+.pdf-card .badge{ position:absolute; top:14mm; right:5mm; width:24mm; height:24mm; border-radius:50%; background:#E8A33D;
+  display:flex; align-items:center; justify-content:center; font-weight:900; color:#1F2A1E; line-height:1; border:1mm solid #FFFBF0; }
+.pdf-card .qrwrap{ position:absolute; top:40mm; left:50%; transform:translateX(-50%); width:62mm; height:62mm; background:#fff;
+  border:0.5mm solid #4B5B45; border-radius:2mm; display:flex; align-items:center; justify-content:center; }
+.pdf-card .qrwrap img{ width:56mm; height:56mm; }
+.pdf-card .cap{ position:absolute; top:106mm; left:0; right:0; text-align:center; font-size:5.2mm; color:#4B5B45; font-weight:700; }
+.pdf-card .trail{ position:absolute; top:120mm; left:0; right:0; text-align:center; font-size:7mm; opacity:0.55; }
