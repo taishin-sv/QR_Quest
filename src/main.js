@@ -12,7 +12,7 @@ import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
 import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
-import { words, modeOf, MODES } from './lib/words.js';
+import { WORDS } from './lib/words.js';
 import { pickExample } from './lib/missions.js';
 import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
 import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
@@ -44,7 +44,7 @@ $('backToPresetsBtn').addEventListener('click', () => switchView('presets'));
 
 function refreshHeader() {
   const p = activePreset();
-  $('appSub').textContent = words(p).appSub;
+  $('appSub').textContent = WORDS.appSub;
   $('headerIcon').textContent = p.icon || '🧭';
   $('appTitle').textContent = p.name || 'ぼうけんカード';
 }
@@ -71,7 +71,7 @@ function renderPresets() {
     name.textContent = p.name || '(無題)';
     const meta = document.createElement('div');
     meta.className = 'p-meta';
-    meta.textContent = words(p).metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
+    meta.textContent = WORDS.metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
     body.appendChild(name);
     body.appendChild(meta);
     item.appendChild(body);
@@ -135,7 +135,7 @@ function renderPresets() {
 }
 
 $('newPresetBtn').addEventListener('click', () => {
-  const np = { id: uid(), name: '新しいぼうけん', icon: '🧭', stageCount: 5, mode: 'mission', hints: makeHints(5) };
+  const np = { id: uid(), name: '新しいぼうけん', icon: '🧭', stageCount: 5, hints: makeHints(5) };
   store.presets[np.id] = np;
   store.activeId = np.id;
   saveStore();
@@ -202,13 +202,11 @@ const saveMsg = $('saveMsg');
 
 function renderEdit() {
   const p = activePreset();
-  const W = words(p);
-  $('modeSelect').value = modeOf(p);
+  const W = WORDS;
   $('stageCountLabel').textContent = W.stageCountLabel;
   $('stageCountNote').textContent = W.stageCountNote;
   $('editTitle').textContent = W.editTitle;
   $('editDesc').textContent = W.editDesc;
-  $('fillExamplesBtn').style.display = W.mission ? 'block' : 'none';
   presetNameEl.value = p.name || '';
   stageCountEl.value = p.stageCount;
   stageCountValEl.textContent = p.stageCount;
@@ -308,7 +306,7 @@ function renderEdit() {
     });
     body.appendChild(ta);
 
-    if (W.mission && !isGoal) {
+    if (!isGoal) {
       const ex = document.createElement('button');
       ex.type = 'button';
       ex.className = 'small example-btn';
@@ -381,18 +379,6 @@ function editAction(fn) {
   renderEdit();
 }
 
-Object.entries(MODES).forEach(([value, label]) => {
-  const o = document.createElement('option');
-  o.value = value;
-  o.textContent = label + (value === 'mission' ? '（できたら カードを もらう）' : '（カードを さがす）');
-  $('modeSelect').appendChild(o);
-});
-$('modeSelect').addEventListener('change', () => {
-  const p = activePreset();
-  p.mode = $('modeSelect').value;
-  refreshHeader();
-  renderEdit();
-});
 $('fillExamplesBtn').addEventListener('click', () => {
   const p = activePreset();
   p.hints.forEach((h, i) => {
@@ -575,7 +561,7 @@ function renderProgressPanel() {
 
   const r = rangeOfStage(p, stage);
   const g = r.to - r.from + 1;
-  title.textContent = words(p).scanTitle(g);
+  title.textContent = WORDS.scanTitle(g);
   progressPanel.appendChild(title);
   progressPanel.appendChild(cardChips(r.from, r.to, (i) => progress.found[i]));
   if (g > 1) {
@@ -695,7 +681,7 @@ function handleScan(n) {
     const msgs = {
       notStarted: '🚩 さいしょは スタートカードを よみとってね',
       alreadyStarted: '🚩 スタートは もう よみとったよ',
-      wrongStage: words(p).wrongStage(n, want),
+      wrongStage: WORDS.wrongStage(n, want),
       outOfRange: '#' + n + ' は このぼうけんの カードじゃないよ',
     };
     showToast(msgs[res.reason] || '🤔 このカードは いまは つかえないよ');
@@ -706,13 +692,13 @@ function handleScan(n) {
 
   if (res.event === 'dup') {
     sfx.dup();
-    showToast(words(p).dup(n));
+    showToast(WORDS.dup(n));
     return;
   }
   if (res.event === 'found') {
     sfx.found();
     fx.sparkle();
-    showToast(words(p).found(n, res.remaining));
+    showToast(WORDS.found(n, res.remaining));
     return;
   }
   stopCamera();
@@ -720,7 +706,7 @@ function handleScan(n) {
     sfx.start();
     fx.clear();
   } else {
-    showToast(res.multi ? '🎉 ぜんぶ そろった！' : words(p).got);
+    showToast(res.multi ? '🎉 ぜんぶ そろった！' : WORDS.got);
     if (res.event === 'goal') {
       sfx.goal();
       fx.goal();
@@ -744,7 +730,7 @@ function showReveal(idx) {
   revealCard.className = 'card reveal' + (isGoal ? ' goal' : '');
   $('goalBanner').style.display = isGoal ? 'block' : 'none';
   revealEmoji.textContent = h.emoji || (isGoal ? '🏆' : '🧭');
-  revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : words(p).fallbackText;
+  revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : WORDS.fallbackText;
   lastSpokenText = revealText.textContent;
   const nextEl = $('revealNext');
   nextEl.innerHTML = '';
@@ -752,7 +738,7 @@ function showReveal(idx) {
     const nr = rangeOfStage(p, idx + 1);
     const label = document.createElement('div');
     label.className = 'progress-title';
-    label.textContent = words(p).nextLabel(nr.to > nr.from);
+    label.textContent = WORDS.nextLabel(nr.to > nr.from);
     nextEl.appendChild(label);
     nextEl.appendChild(cardChips(nr.from, nr.to, null));
     const range = nr.to > nr.from ? '#' + nr.from + '〜#' + nr.to : '#' + nr.from;
@@ -819,14 +805,14 @@ async function initVoiceSettings() {
 }
 voiceSelect.addEventListener('change', () => {
   saveVoiceSettings({ ...loadVoiceSettings(), voiceURI: voiceSelect.value });
-  speak('こんにちは。つぎの ばしょを さがしてね');
+  speak('こんにちは。つぎの ミッションを はじめよう');
 });
 voiceRate.addEventListener('input', () => {
   const rate = parseFloat(voiceRate.value);
   $('voiceRateVal').textContent = rateLabel(rate);
   saveVoiceSettings({ ...loadVoiceSettings(), rate });
 });
-$('voiceTestBtn').addEventListener('click', () => speak('こんにちは。たまごの、あるところを さがしてね'));
+$('voiceTestBtn').addEventListener('click', () => speak('こんにちは。ミッションを はじめよう'));
 
 const sfxToggle = $('sfxToggle');
 sfxToggle.checked = sfxEnabled();

@@ -12,6 +12,9 @@ describe('normalizePreset', () => {
     expect(p.hints.map((h) => h.cardCount)).toEqual([undefined, 4, 1]);
     expect(p.stageCount).toBe(2);
   });
+  it('廃止した mode(あそびかた)は取り除く', () => {
+    expect('mode' in normalizePreset({ mode: 'search', hints: [{}, {}] })).toBe(false);
+  });
   it('makeHints はスタート以外に cardCount=1', () => {
     expect(makeHints(2).map((h) => h.cardCount)).toEqual([undefined, 1, 1]);
   });

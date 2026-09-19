@@ -15,7 +15,7 @@
     <span class="egg" id="headerIcon">🧭</span>
     <div>
       <h1 id="appTitle">ぼうけんカード</h1>
-      <p id="appSub">QRをよみとって つぎのばしょを さがそう</p>
+      <p id="appSub">ミッションを クリアして カードを よみこもう</p>
     </div>
   </header>
 
@@ -48,7 +48,7 @@
     <div class="card">
       <h2>🔊 よみあげの こえ</h2>
       <p class="muted" style="margin-top:-4px;">
-        ヒントを読み上げる声です。端末にある日本語の声から選べます。聞き取りにくいときは、声を変えたり、ゆっくりにしてみてください。
+        ミッションを読み上げる声です。端末にある日本語の声から選べます。聞き取りにくいときは、声を変えたり、ゆっくりにしてみてください。
       </p>
       <label for="voiceSelect">こえ</label>
       <select id="voiceSelect"></select>
@@ -72,9 +72,6 @@
       <label>アイコン</label>
       <div class="emoji-picker" id="iconPicker"></div>
 
-      <label for="modeSelect">あそびかた</label>
-      <select id="modeSelect"></select>
-
       <label for="stageCount"><span id="stageCountLabel">ヒントのかず（スタートを除く）</span>：<span id="stageCountVal">5</span></label>
       <input type="number" id="stageCount" min="1" max="15" value="5">
       <p class="muted" style="margin:6px 0 0;">
@@ -90,7 +87,7 @@
       <p class="muted" style="margin-top:-4px;">
         <span id="editDesc">「0」はスタート直後のヒント。さいごの番号は「ゴールメッセージ」になります。</span>
       </p>
-      <button class="ghost" id="fillExamplesBtn" style="display:none;">🎲 からっぽの ミッションを れいで うめる</button>
+      <button class="ghost" id="fillExamplesBtn">🎲 からっぽの ミッションを れいで うめる</button>
       <div id="stageList"></div>
     </div>
 
@@ -122,7 +119,7 @@
   <section id="view-play" class="view">
     <div id="playEmpty" class="empty" style="display:none;">
       <span class="ic">🧭</span>
-      まだヒントが ほぞんされていません。<br>「編集」タブで つくってね。
+      まだミッションが ほぞんされていません。<br>「編集」タブで つくってね。
     </div>
 
     <div id="playScan">

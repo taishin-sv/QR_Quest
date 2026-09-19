@@ -23,19 +23,22 @@ export function makeHints(n) {
 }
 
 function sampleDinoPreset() {
-  const texts = [
-    'たまごの あるところを さがしてね',
-    'つめたいところに かくれているよ',
-    'たかいところを みてみよう',
-    'みずの ちかくを さがしてみて',
-    'まるい ものの なかを のぞいてみて',
-    'やったー！さいごまで たどりついたね！たからものは ひみつきちの中だよ！',
+  const items = [
+    ['🥚', 'たまごを だいじに あたためよう！ りょうてで たまごの かたちを つくって 10びょう じっとしてね'],
+    ['🦴', 'きょうりゅうに なりきろう！ 「がおー！」と おおきな こえで ほえよう'],
+    ['🌋', 'かざんが ふんか！ その ばで ジャンプ 5かい！'],
+    ['💧', 'みずを ごくごく のんで ひとやすみ しよう'],
+    ['🪨', 'おおきな いわを もちあげる ポーズを しよう。「うーん！」'],
+    ['🏆', 'やったー！ きょうりゅうミッション だいせいこう！ おめでとう！'],
   ];
-  const emojis = ['🥚', '🦴', '🌋', '💧', '🪨', '🏆'];
-  const hints = texts.map((text, i) => ({ emoji: emojis[i], text }));
+  const hints = items.map(([emoji, text], i) => {
+    const h = { emoji, text };
+    if (i >= 1) h.cardCount = 1;
+    return h;
+  });
   return {
     id: 'sample-dino',
-    name: 'きょうりゅうたんけん（サンプル）',
+    name: 'きょうりゅうミッション（サンプル）',
     icon: '🦕',
     stageCount: hints.length - 1,
     hints,
@@ -54,6 +57,7 @@ export function normalizePreset(p) {
   });
   p.stageCount = p.hints.length - 1;
   delete p.groupSize;
+  delete p.mode; // 以前あった「あそびかた」の設定は廃止(ミッションに一本化)
   return p;
 }
 
