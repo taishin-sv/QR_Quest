@@ -5,8 +5,8 @@ import './style.css';
 
 import jsQR from 'jsqr';
 import { loadJSON, saveJSON } from './lib/storage.js';
-import { ICONS, HINT_EMOJIS, uid, makeHints, loadStore, saveStore as persistStore } from './lib/presets.js';
-import { rangeOfStage, stageOfCard } from './lib/stages.js';
+import { ICONS, HINT_EMOJIS, uid, makeHints, newHint, normalizePreset, loadStore, saveStore as persistStore } from './lib/presets.js';
+import { rangeOfStage, stageOfCard, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './lib/stages.js';
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { exportPdf } from './lib/pdf.js';
 
@@ -60,7 +60,7 @@ function renderPresets() {
     name.textContent = p.name || '(無題)';
     const meta = document.createElement('div');
     meta.className = 'p-meta';
-    meta.textContent = 'ヒント' + p.stageCount + '個・' + (p.groupSize > 1 ? p.groupSize + 'まい協力' : 'ソロ') + (isActive ? '・つかってる' : '');
+    meta.textContent = 'ヒント' + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
     body.appendChild(name);
     body.appendChild(meta);
     item.appendChild(body);
@@ -124,7 +124,7 @@ function renderPresets() {
 }
 
 $('newPresetBtn').addEventListener('click', () => {
-  const np = { id: uid(), name: '新しいぼうけん', icon: '🧭', stageCount: 5, groupSize: 1, hints: makeHints(5) };
+  const np = { id: uid(), name: '新しいぼうけん', icon: '🧭', stageCount: 5, hints: makeHints(5) };
   store.presets[np.id] = np;
   store.activeId = np.id;
   saveStore();
@@ -167,6 +167,7 @@ $('importBtn').addEventListener('click', () => {
     np.id = uid();
     if (!np.name) np.name = 'インポートしたプリセット';
     if (!np.icon) np.icon = '🧭';
+    normalizePreset(np);
     store.presets[np.id] = np;
     store.activeId = np.id;
     saveStore();
@@ -184,8 +185,6 @@ const presetNameEl = $('presetName');
 const iconPicker = $('iconPicker');
 const stageCountEl = $('stageCount');
 const stageCountValEl = $('stageCountVal');
-const groupSizeEl = $('groupSize');
-const groupSizeValEl = $('groupSizeVal');
 const stageListEl = $('stageList');
 const saveBtn = $('saveBtn');
 const saveMsg = $('saveMsg');
@@ -195,8 +194,6 @@ function renderEdit() {
   presetNameEl.value = p.name || '';
   stageCountEl.value = p.stageCount;
   stageCountValEl.textContent = p.stageCount;
-  groupSizeEl.value = p.groupSize;
-  groupSizeValEl.textContent = p.groupSize;
 
   iconPicker.innerHTML = '';
   ICONS.forEach((em) => {
@@ -214,7 +211,8 @@ function renderEdit() {
 
   const cardsPhrase = (s) => {
     const r = rangeOfStage(p, s);
-    return p.groupSize <= 1 ? 'カード#' + r.from : 'カード#' + r.from + '〜#' + r.to + '（' + p.groupSize + 'まい全部）';
+    const n = r.to - r.from + 1;
+    return n <= 1 ? 'カード#' + r.from : 'カード#' + r.from + '〜#' + r.to + '（' + n + 'まい全部）';
   };
 
   stageListEl.innerHTML = '';
@@ -245,6 +243,28 @@ function renderEdit() {
         ? 'スタート直後のヒント（つぎ：' + cardsPhrase(1) + ' をさがす）'
         : cardsPhrase(idx) + ' を見つけたときのヒント（つぎ：' + cardsPhrase(idx + 1) + ' をさがす）';
     body.appendChild(labelEl);
+
+    if (idx >= 1) {
+      const countWrap = document.createElement('div');
+      countWrap.className = 'count-row';
+      const countLabel = document.createElement('span');
+      countLabel.textContent = 'このヒントを もらうのに あつめるカード：';
+      countWrap.appendChild(countLabel);
+      const sel = document.createElement('select');
+      for (let n = 1; n <= MAX_CARDS_PER_HINT; n++) {
+        const o = document.createElement('option');
+        o.value = String(n);
+        o.textContent = n + 'まい';
+        sel.appendChild(o);
+      }
+      sel.value = String(cardsInStage(p, idx));
+      sel.addEventListener('change', () => {
+        h.cardCount = parseInt(sel.value, 10);
+        renderEdit();
+      });
+      countWrap.appendChild(sel);
+      body.appendChild(countWrap);
+    }
 
     const picker = document.createElement('div');
     picker.className = 'emoji-picker';
@@ -280,19 +300,11 @@ stageCountEl.addEventListener('input', () => {
   const n = Math.max(1, Math.min(15, parseInt(stageCountEl.value || '1', 10)));
   stageCountValEl.textContent = n;
   const newHints = [];
-  for (let i = 0; i <= n; i++) newHints.push(p.hints[i] || { emoji: HINT_EMOJIS[i % HINT_EMOJIS.length], text: '' });
+  for (let i = 0; i <= n; i++) newHints.push(p.hints[i] || newHint(i));
   p.stageCount = n;
   p.hints = newHints;
   renderEdit();
 });
-groupSizeEl.addEventListener('input', () => {
-  const p = activePreset();
-  const g = Math.max(1, Math.min(5, parseInt(groupSizeEl.value || '1', 10)));
-  groupSizeValEl.textContent = g;
-  p.groupSize = g;
-  renderEdit();
-});
-
 saveBtn.addEventListener('click', () => {
   const p = activePreset();
   p.name = presetNameEl.value.trim() || p.name;
@@ -318,6 +330,8 @@ function printCount() {
 let previewToken = 0;
 async function renderPreview() {
   const token = ++previewToken;
+  const p = activePreset();
+  $('printNeed').textContent = 'いまのプリセットで つかうカード：#1〜#' + totalCards(p) + '（' + totalCards(p) + 'まい）';
   const n = printCount();
   const showN = Math.min(n, 5);
   const items = [{ label: '🚩 スタート', num: 0 }];
@@ -403,7 +417,7 @@ const progressKey = () => 'advcards_progress_' + store.activeId;
 let progress = loadJSON(progressKey()) || { currentStage: 0, found: [] };
 
 function ensureFoundArray() {
-  const g = activePreset().groupSize || 1;
+  const g = cardsInStage(activePreset(), progress.currentStage);
   if (progress.currentStage === 0 || g <= 1) {
     progress.found = [];
     return;
@@ -428,7 +442,7 @@ function showToast(msg) {
 function renderProgressPanel() {
   progressPanel.innerHTML = '';
   const p = activePreset();
-  const g = p.groupSize || 1;
+  const g = cardsInStage(p, progress.currentStage);
   if (progress.currentStage === 0 || g <= 1) {
     progressPanel.style.display = 'none';
     return;
@@ -531,10 +545,10 @@ function handleScan(n) {
     return;
   }
   const stage = stageOfCard(p, n);
-  if (stage !== progress.currentStage) return;
+  if (stage < 1 || stage !== progress.currentStage) return;
   if (!p.hints[stage]) return;
 
-  const g = p.groupSize || 1;
+  const g = cardsInStage(p, stage);
   const r = rangeOfStage(p, stage);
   const pos = n - r.from;
   ensureFoundArray();

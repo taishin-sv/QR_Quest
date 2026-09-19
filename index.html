@@ -57,18 +57,10 @@
       <label>アイコン</label>
       <div class="emoji-picker" id="iconPicker"></div>
 
-      <div class="row">
-        <div>
-          <label for="stageCount">ヒントのかず（スタートを除く）：<span id="stageCountVal">5</span></label>
-          <input type="number" id="stageCount" min="1" max="15" value="5">
-        </div>
-        <div>
-          <label for="groupSize">1ヒントに集めるカード：<span id="groupSizeVal">1</span>まい</label>
-          <input type="number" id="groupSize" min="1" max="5" value="1">
-        </div>
-      </div>
+      <label for="stageCount">ヒントのかず（スタートを除く）：<span id="stageCountVal">5</span></label>
+      <input type="number" id="stageCount" min="1" max="15" value="5">
       <p class="muted" style="margin:6px 0 0;">
-        カード自体はテーマに関係なく共通の連番です。「いんさつ」タブで必要な枚数だけ書き出せます。
+        各ヒントごとに、あつめるカードのまい数を下で決められます。カード自体はテーマに関係なく共通の連番です。「いんさつ」タブで必要な枚数だけ書き出せます。
       </p>
     </div>
 
@@ -93,6 +85,7 @@
       </p>
       <label for="printCount">なんまい 印刷する？（スタートの1まいは別）</label>
       <input type="number" id="printCount" min="1" max="100" value="10">
+      <p class="muted" id="printNeed" style="margin:6px 0 0;"></p>
       <button class="primary amber" id="exportPdfBtn" style="margin-top:14px;">📄 PDFを書き出す</button>
       <div class="pdf-progress" id="pdfProgress" style="display:none;">
         <div class="bar"><div class="fill" id="pdfFill"></div></div>
