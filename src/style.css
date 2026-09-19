@@ -232,3 +232,13 @@ body.nav-hidden .app{ padding-bottom:88px; }
 
 .example-btn{ margin-top:8px; }
 #fillExamplesBtn{ margin:0 0 6px; }
+
+/* ミッションの並べ替え・追加・削除 */
+.row-actions{ flex:0 0 auto; display:flex; flex-direction:column; gap:6px; }
+.icon-btn{ width:44px; height:40px; border-radius:12px; border:2px solid var(--line); background:var(--panel-2); color:var(--ink); font-size:16px; cursor:pointer; padding:0; }
+.icon-btn:disabled{ opacity:0.3; cursor:default; }
+.icon-btn:not(:disabled):active{ background:var(--bg); }
+.insert-btn{ display:block; width:100%; margin:2px 0; padding:10px; border:2px dashed var(--line); border-radius:14px; background:transparent; color:var(--ink-soft); font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.insert-btn:disabled{ opacity:0.4; }
+@media (min-width: 900px){ .icon-btn{ width:52px; height:48px; font-size:18px; } .insert-btn{ font-size:16px; padding:12px; } }
+.insert-btn + .stage-row{ border-top:none; }

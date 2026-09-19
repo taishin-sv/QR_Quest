@@ -10,6 +10,7 @@ import { rangeOfStage, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './li
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
+import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
 import { words, modeOf, MODES } from './lib/words.js';
 import { pickExample } from './lib/missions.js';
@@ -322,8 +323,62 @@ function renderEdit() {
     }
 
     row.appendChild(body);
+
+    // 並べ替え・削除（ゴールは固定）
+    if (!isGoal) {
+      const acts = document.createElement('div');
+      acts.className = 'row-actions';
+      const mk = (label, title, disabled, onClick) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'icon-btn';
+        b.textContent = label;
+        b.title = title;
+        b.setAttribute('aria-label', title);
+        b.disabled = disabled;
+        b.addEventListener('click', onClick);
+        return b;
+      };
+      const lastMission = p.hints.length - 2;
+      acts.appendChild(mk('▲', 'うえに うごかす', idx === 0, () => editAction(() => moveHint(p, idx, -1) && idx - 1)));
+      acts.appendChild(mk('▼', 'したに うごかす', idx === lastMission, () => editAction(() => moveHint(p, idx, 1) && idx + 1)));
+      acts.appendChild(
+        mk('🗑', 'けす', p.stageCount <= 1, () => {
+          if ((h.text && h.text.trim()) && !confirm('この ' + W.hint + 'を けしますか？')) return;
+          editAction(() => deleteHint(p, idx) && Math.min(idx, p.hints.length - 2));
+        }),
+      );
+      row.appendChild(acts);
+    }
     stageListEl.appendChild(row);
+    row.dataset.idx = String(idx);
+
+    // この行の次に ふやす
+    if (!isGoal) {
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'insert-btn';
+      add.textContent = '＋ ここに ' + W.hint + 'を ふやす';
+      add.disabled = p.stageCount >= 15;
+      add.addEventListener('click', () => editAction(() => insertHintAfter(p, idx)));
+      stageListEl.appendChild(add);
+    }
   });
+
+  if (pendingFocusRow !== null) {
+    const target = stageListEl.querySelector('.stage-row[data-idx="' + pendingFocusRow + '"]');
+    pendingFocusRow = null;
+    if (target) target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+}
+
+// 並べ替え/挿入/削除の共通処理。fn は動かした後の行の位置(数値)を返す。失敗(false/-1)なら何もしない
+let pendingFocusRow = null;
+function editAction(fn) {
+  const r = fn();
+  if (r === false || r === -1 || r === undefined) return;
+  pendingFocusRow = r;
+  renderEdit();
 }
 
 Object.entries(MODES).forEach(([value, label]) => {
