@@ -72,10 +72,13 @@
       <label>アイコン</label>
       <div class="emoji-picker" id="iconPicker"></div>
 
-      <label for="stageCount">ヒントのかず（スタートを除く）：<span id="stageCountVal">5</span></label>
+      <label for="modeSelect">あそびかた</label>
+      <select id="modeSelect"></select>
+
+      <label for="stageCount"><span id="stageCountLabel">ヒントのかず（スタートを除く）</span>：<span id="stageCountVal">5</span></label>
       <input type="number" id="stageCount" min="1" max="15" value="5">
       <p class="muted" style="margin:6px 0 0;">
-        各ヒントごとに、あつめるカードのまい数を下で決められます。カード自体はテーマに関係なく共通の連番です。「いんさつ」タブで必要な枚数だけ書き出せます。
+        <span id="stageCountNote">各ヒントごとに、あつめるカードのまい数を下で決められます。カード自体はテーマに関係なく共通の連番です。「いんさつ」タブで必要な枚数だけ書き出せます。</span>
       </p>
     </div>
 
@@ -83,10 +86,11 @@
     <p class="muted" id="saveMsg" style="min-height:18px; text-align:center;"></p>
     </div>
     <div class="card">
-      <h2>📝 ヒントをつくる</h2>
+      <h2 id="editTitle">📝 ヒントをつくる</h2>
       <p class="muted" style="margin-top:-4px;">
-        「0」はスタート直後のヒント。さいごの番号は「ゴールメッセージ」になります。
+        <span id="editDesc">「0」はスタート直後のヒント。さいごの番号は「ゴールメッセージ」になります。</span>
       </p>
+      <button class="ghost" id="fillExamplesBtn" style="display:none;">🎲 からっぽの ミッションを れいで うめる</button>
       <div id="stageList"></div>
     </div>
 

@@ -11,6 +11,8 @@ import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
 import { fx } from './lib/fx.js';
+import { words, modeOf, MODES } from './lib/words.js';
+import { pickExample } from './lib/missions.js';
 import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
 import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
@@ -41,6 +43,7 @@ $('backToPresetsBtn').addEventListener('click', () => switchView('presets'));
 
 function refreshHeader() {
   const p = activePreset();
+  $('appSub').textContent = words(p).appSub;
   $('headerIcon').textContent = p.icon || '🧭';
   $('appTitle').textContent = p.name || 'ぼうけんカード';
 }
@@ -67,7 +70,7 @@ function renderPresets() {
     name.textContent = p.name || '(無題)';
     const meta = document.createElement('div');
     meta.className = 'p-meta';
-    meta.textContent = 'ヒント' + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
+    meta.textContent = words(p).metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
     body.appendChild(name);
     body.appendChild(meta);
     item.appendChild(body);
@@ -131,7 +134,7 @@ function renderPresets() {
 }
 
 $('newPresetBtn').addEventListener('click', () => {
-  const np = { id: uid(), name: '新しいぼうけん', icon: '🧭', stageCount: 5, hints: makeHints(5) };
+  const np = { id: uid(), name: '新しいぼうけん', icon: '🧭', stageCount: 5, mode: 'mission', hints: makeHints(5) };
   store.presets[np.id] = np;
   store.activeId = np.id;
   saveStore();
@@ -198,6 +201,13 @@ const saveMsg = $('saveMsg');
 
 function renderEdit() {
   const p = activePreset();
+  const W = words(p);
+  $('modeSelect').value = modeOf(p);
+  $('stageCountLabel').textContent = W.stageCountLabel;
+  $('stageCountNote').textContent = W.stageCountNote;
+  $('editTitle').textContent = W.editTitle;
+  $('editDesc').textContent = W.editDesc;
+  $('fillExamplesBtn').style.display = W.mission ? 'block' : 'none';
   presetNameEl.value = p.name || '';
   stageCountEl.value = p.stageCount;
   stageCountValEl.textContent = p.stageCount;
@@ -245,17 +255,17 @@ function renderEdit() {
     const labelEl = document.createElement('div');
     labelEl.className = 'stage-label';
     labelEl.textContent = isGoal
-      ? 'ゴールメッセージ（' + cardsPhrase(p.hints.length - 1) + ' を見つけたとき）'
+      ? W.rowGoal(cardsPhrase(p.hints.length - 1))
       : idx === 0
-        ? 'スタート直後のヒント（つぎ：' + cardsPhrase(1) + ' をさがす）'
-        : cardsPhrase(idx) + ' を見つけたときのヒント（つぎ：' + cardsPhrase(idx + 1) + ' をさがす）';
+        ? W.rowStart(cardsPhrase(1))
+        : W.rowMid(cardsPhrase(idx), cardsPhrase(idx + 1));
     body.appendChild(labelEl);
 
     if (idx >= 1) {
       const countWrap = document.createElement('div');
       countWrap.className = 'count-row';
       const countLabel = document.createElement('span');
-      countLabel.textContent = 'このヒントを もらうのに あつめるカード：';
+      countLabel.textContent = W.countLabel;
       countWrap.appendChild(countLabel);
       const sel = document.createElement('select');
       for (let n = 1; n <= MAX_CARDS_PER_HINT; n++) {
@@ -290,17 +300,54 @@ function renderEdit() {
 
     const ta = document.createElement('textarea');
     ta.rows = 2;
-    ta.placeholder = isGoal ? 'れい：やったー！さいごまで たどりついたね！' : 'れい：つめたいところをさがしてね';
+    ta.placeholder = W.placeholder(isGoal);
     ta.value = h.text || '';
     ta.addEventListener('input', () => {
       h.text = ta.value;
     });
     body.appendChild(ta);
 
+    if (W.mission && !isGoal) {
+      const ex = document.createElement('button');
+      ex.type = 'button';
+      ex.className = 'small example-btn';
+      ex.textContent = '💡 ミッションの れいを いれる';
+      ex.addEventListener('click', () => {
+        const e = pickExample(p.hints.map((x) => x.text));
+        h.emoji = e.emoji;
+        h.text = e.text;
+        renderEdit();
+      });
+      body.appendChild(ex);
+    }
+
     row.appendChild(body);
     stageListEl.appendChild(row);
   });
 }
+
+Object.entries(MODES).forEach(([value, label]) => {
+  const o = document.createElement('option');
+  o.value = value;
+  o.textContent = label + (value === 'mission' ? '（できたら カードを もらう）' : '（カードを さがす）');
+  $('modeSelect').appendChild(o);
+});
+$('modeSelect').addEventListener('change', () => {
+  const p = activePreset();
+  p.mode = $('modeSelect').value;
+  refreshHeader();
+  renderEdit();
+});
+$('fillExamplesBtn').addEventListener('click', () => {
+  const p = activePreset();
+  p.hints.forEach((h, i) => {
+    if (i === p.hints.length - 1 || (h.text && h.text.trim())) return; // ゴールと入力済みはそのまま
+    const e = pickExample(p.hints.map((x) => x.text));
+    h.emoji = e.emoji;
+    h.text = e.text;
+  });
+  renderEdit();
+});
 
 stageCountEl.addEventListener('input', () => {
   const p = activePreset();
@@ -473,7 +520,7 @@ function renderProgressPanel() {
 
   const r = rangeOfStage(p, stage);
   const g = r.to - r.from + 1;
-  title.textContent = g > 1 ? 'いま さがす カード（ぜんぶで ' + g + 'まい）' : 'いま さがす カード';
+  title.textContent = words(p).scanTitle(g);
   progressPanel.appendChild(title);
   progressPanel.appendChild(cardChips(r.from, r.to, (i) => progress.found[i]));
   if (g > 1) {
@@ -593,7 +640,7 @@ function handleScan(n) {
     const msgs = {
       notStarted: '🚩 さいしょは スタートカードを よみとってね',
       alreadyStarted: '🚩 スタートは もう よみとったよ',
-      wrongStage: '#' + n + ' は まだ だよ。' + want + ' を さがしてね',
+      wrongStage: words(p).wrongStage(n, want),
       outOfRange: '#' + n + ' は このぼうけんの カードじゃないよ',
     };
     showToast(msgs[res.reason] || '🤔 このカードは いまは つかえないよ');
@@ -604,13 +651,13 @@ function handleScan(n) {
 
   if (res.event === 'dup') {
     sfx.dup();
-    showToast('#' + n + ' は もうみつけてるよ');
+    showToast(words(p).dup(n));
     return;
   }
   if (res.event === 'found') {
     sfx.found();
     fx.sparkle();
-    showToast('✅ #' + n + ' みつけた！ のこり' + res.remaining + 'まい');
+    showToast(words(p).found(n, res.remaining));
     return;
   }
   stopCamera();
@@ -618,7 +665,7 @@ function handleScan(n) {
     sfx.start();
     fx.clear();
   } else {
-    showToast(res.multi ? '🎉 ぜんぶ そろった！' : '✅ みつけた！');
+    showToast(res.multi ? '🎉 ぜんぶ そろった！' : words(p).got);
     if (res.event === 'goal') {
       sfx.goal();
       fx.goal();
@@ -642,7 +689,7 @@ function showReveal(idx) {
   revealCard.className = 'card reveal' + (isGoal ? ' goal' : '');
   $('goalBanner').style.display = isGoal ? 'block' : 'none';
   revealEmoji.textContent = h.emoji || (isGoal ? '🏆' : '🧭');
-  revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : 'つぎのばしょを さがしてみよう！';
+  revealText.textContent = h.text && h.text.trim() ? h.text : isGoal ? 'やったー！ゴールだよ！' : words(p).fallbackText;
   lastSpokenText = revealText.textContent;
   const nextEl = $('revealNext');
   nextEl.innerHTML = '';
@@ -650,7 +697,7 @@ function showReveal(idx) {
     const nr = rangeOfStage(p, idx + 1);
     const label = document.createElement('div');
     label.className = 'progress-title';
-    label.textContent = nr.to > nr.from ? 'つぎは この カードを ぜんぶ さがそう' : 'つぎは この カードを さがそう';
+    label.textContent = words(p).nextLabel(nr.to > nr.from);
     nextEl.appendChild(label);
     nextEl.appendChild(cardChips(nr.from, nr.to, null));
     const range = nr.to > nr.from ? '#' + nr.from + '〜#' + nr.to : '#' + nr.from;
