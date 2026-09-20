@@ -34,6 +34,18 @@ describe('builtinPresets', () => {
   });
 });
 
+describe('ナイトルーティン(端末はリビングに置いたまま)', () => {
+  it('寝室に端末を持ち込ませるミッションを含まない', () => {
+    const texts = byId('builtin-night').hints.map((h) => h.text).join('|');
+    expect(texts).not.toContain('おふとん');
+    expect(texts).not.toContain('でんきを けして');
+  });
+  it('最後のメッセージは「おやすみなさい」', () => {
+    const hints = byId('builtin-night').hints;
+    expect(hints[hints.length - 1].text).toContain('おやすみなさい');
+  });
+});
+
 describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
@@ -122,6 +134,25 @@ describe('applyBuiltins: 内容の改訂(rev)の反映', () => {
     expect(s.presets['builtin-morning'].stageCount).toBe(5);
     expect(s.presets['builtin-morning'].rev).toBe(byId('builtin-morning').rev);
   });
+  it('手を入れていない旧ナイトルーティン(署名なし)も新しい内容になる', () => {
+    const v1 = [
+      ['🧸', 'おもちゃを もとの ばしょに かたづけよう'],
+      ['🛁', 'おふろに はいろう。あたまも あらってね'],
+      ['🧴', 'からだを ふいて、パジャマに きがえよう'],
+      ['🪥', 'はみがきを しよう。おくばも ピカピカに！'],
+      ['🚽', 'ねるまえに といれに いこう'],
+      ['📖', 'おふとんで えほんを 1さつ よもう'],
+      ['🌙', 'でんきを けして、おふとんに はいろう'],
+      ['😴', 'ぜんぶ できたね！ おつかれさま。いい ゆめを みてね。おやすみなさい！'],
+    ].map(([emoji, text], i) => (i === 0 ? { emoji, text } : { emoji, text, cardCount: 1 }));
+    const s = {
+      activeId: 'builtin-night',
+      presets: { 'builtin-night': { id: 'builtin-night', name: 'ナイトルーティン', icon: '🌙', category: 'せいかつ', stageCount: 7, hints: v1 } },
+      seeded: ['builtin-night'],
+    };
+    expect(applyBuiltins(s).replaced).toContain('builtin-night');
+    expect(s.presets['builtin-night'].stageCount).toBe(6);
+  });
   it('編集済みの旧版はそのまま残す', () => {
     const old = morningV1();
     old.hints[1].text = '自分で直した文章';
@@ -149,6 +180,6 @@ describe('applyBuiltins: 内容の改訂(rev)の反映', () => {
     const r = applyBuiltins(s);
     expect(r.replaced).toEqual([]);
     expect(s.presets['builtin-night'].baseSig).toBeTruthy();
-    expect(s.presets['builtin-night'].rev).toBe(1);
+    expect(s.presets['builtin-night'].rev).toBe(byId('builtin-night').rev);
   });
 });
