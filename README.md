@@ -73,7 +73,6 @@ npm run icons     # public/icon.svg から PWA アイコンPNGを再生成
   - `words.js` — 画面の文言
   - `speech.js` / `sfx.js` / `fx.js` — 読み上げ / 効果音 / 演出
   - `pdf.js` — カードのPDF書き出し（html2canvas + jsPDF。使うときに読み込む）
-- `scripts/make-voice.mjs` — 組み込み・基本ミッションの読み上げ音声を VOICEVOX で作る（後述）
 - `scripts/make-overlay.mjs` — 3枚重ねると絵が浮かび上がる透明フィルム用の印刷データを作る
 - `docs/` — 仕様・経緯（`SPEC.md`）、配布用プリセット、重ねシートの印刷データ
 
@@ -84,17 +83,6 @@ npm run icons     # public/icon.svg から PWA アイコンPNGを再生成
 ### データの保存
 
 サーバー・DBはなく、すべて端末の `localStorage` に保存されます（プリセット、進行状況、読み上げ・カメラ・メニューの設定）。
-
-## 読み上げ音声（VOICEVOX）
-
-iPadのブラウザでは標準の声（Kyoko）しか使えないため、**組み込みのミッションと「きほんから えらぶ」の文章は、あらかじめ VOICEVOX で作った音声ファイル（`public/voice/`）で読み上げます**。文章がここに無い（自分で書いた）ときは、端末の声で読みます。
-
-1. VOICEVOX を起動する（ffmpeg も必要）
-2. `node scripts/make-voice.mjs --list` で声を確認し、`--samples 2,3,8` で試聴用サンプルを `docs/voice-samples/` に作る
-3. `node scripts/make-voice.mjs --speaker <ID>` で全音声を `public/voice/` に作る（文章を直したら再実行。読みを直したいときは `scripts/voice-overrides.json`）
-4. `public/voice/` をコミットする
-
-利用規約により、アプリの声の設定欄に `VOICEVOX:<話者名>` のクレジットを表示します。
 
 ## オフライン / PWA
 

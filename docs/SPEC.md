@@ -349,8 +349,3 @@ Anthropicの `frontend-design` スキル（AI生成デザインにありがち�
 ### 13.23 読み上げの区切り設定
 
 - iPad(Chrome=WebKit)で標準の Kyoko しか選べず、区切って読むとイントネーションが不自然という報告を受け、「ことばを くぎって よむ」設定を追加（既定オン。オフだと空白のまま読ませる）。声そのものを良くするには、iPadの設定→アクセシビリティ→読み上げコンテンツ→声→日本語 で「拡張/プレミアム」の声をダウンロードする。
-
-### 13.24 録音済み音声（VOICEVOX）
-
-- iPad(Chrome/Safari)は標準の Kyoko しか使えず、Siri・拡張音声は出ないため、組み込み/基本ミッションは VOICEVOX で作った音声(`public/voice/*.mp3` と `manifest.json`)で読み上げる。文章がmanifestに無ければ従来の端末の声。`scripts/make-voice.mjs`（--list / --samples / --speaker）で生成。再生は Web Audio（iOSで安定）。クレジット表示あり。
-- 未生成(manifest なし)のときは従来どおり端末の声で動く。

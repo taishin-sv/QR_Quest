@@ -21,12 +21,6 @@ export function unlockAudio() {
   } catch (e) {}
 }
 
-// 録音済みの音声など、他のモジュールから使う
-export function getAudioContext() {
-  unlockAudio();
-  return ctx;
-}
-
 // notes: [周波数Hz, 開始秒, 長さ秒]
 function tones(notes, { type = 'triangle', gain = 0.22 } = {}) {
   if (!sfxEnabled()) return;

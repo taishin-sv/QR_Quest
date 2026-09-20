@@ -10,7 +10,7 @@ export default defineConfig({
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       workbox: {
         // JS/CSS/HTML/フォント(woff2のみ。woffは古い端末向けの予備なので除外)/画像をすべてプリキャッシュ → 初回読み込み後は完全オフライン動作
-        globPatterns: ['**/*.{js,css,html,woff2,svg,png,webmanifest,mp3,json}'],
+        globPatterns: ['**/*.{js,css,html,woff2,svg,png,webmanifest}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       manifest: {
