@@ -851,7 +851,7 @@ function showReveal(idx) {
   }
   // 効果音が終わってから読み上げる
   clearTimeout(speakTimer);
-  speakTimer = setTimeout(() => speakText(lastSpokenText), isGoal ? 1900 : idx === 0 ? 800 : 900);
+  speakTimer = setTimeout(() => speakText(lastSpokenText), isGoal ? 2200 : idx === 0 ? 1100 : 1200);
   if (isGoal) {
     $('backToScanBtn').style.display = 'none';
     $('restartBtn').style.display = 'block';
