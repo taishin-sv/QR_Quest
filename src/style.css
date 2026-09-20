@@ -240,3 +240,6 @@ body.nav-hidden .app{ padding-bottom:88px; }
 .insert-btn:disabled{ opacity:0.4; }
 @media (min-width: 900px){ .icon-btn{ width:52px; height:48px; font-size:18px; } .insert-btn{ font-size:16px; padding:12px; } }
 .insert-btn + .stage-row{ border-top:none; }
+
+.group-title{ margin:16px 2px 8px; font-size:14px; font-weight:900; color:var(--ink-soft); letter-spacing:0.04em; }
+.group-title:first-child{ margin-top:4px; }

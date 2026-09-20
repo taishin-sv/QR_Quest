@@ -10,6 +10,7 @@ import { rangeOfStage, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './li
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
+import { CATEGORY_ORDER, OWN_CATEGORY } from './lib/builtin-presets.js';
 import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
 import { WORDS } from './lib/words.js';
@@ -50,87 +51,107 @@ function refreshHeader() {
 
 // ---------- PRESETS TAB ----------
 const presetList = $('presetList');
+// カテゴリー(あそび → せいかつ → その他 → じぶんの ぼうけん)の順に並べる
+function presetGroups() {
+  const groups = new Map();
+  Object.keys(store.presets).forEach((id) => {
+    const cat = store.presets[id].category || OWN_CATEGORY;
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat).push(id);
+  });
+  const rank = (c) => (CATEGORY_ORDER.includes(c) ? CATEGORY_ORDER.indexOf(c) : c === OWN_CATEGORY ? 1000 : 500);
+  return [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
+}
+
 function renderPresets() {
   presetList.innerHTML = '';
-  Object.keys(store.presets).forEach((id) => {
-    const p = store.presets[id];
-    const isActive = id === store.activeId;
-    const item = document.createElement('div');
-    item.className = 'preset-item' + (isActive ? ' active' : '');
+  presetGroups().forEach(([category, ids]) => {
+    const title = document.createElement('div');
+    title.className = 'group-title';
+    title.textContent = category;
+    presetList.appendChild(title);
+    ids.forEach((id) => renderPresetItem(id));
+  });
+}
 
-    const icon = document.createElement('div');
-    icon.className = 'p-icon';
-    icon.textContent = p.icon || '🧭';
-    item.appendChild(icon);
+function renderPresetItem(id) {
+  const p = store.presets[id];
+  const isActive = id === store.activeId;
+  const item = document.createElement('div');
+  item.className = 'preset-item' + (isActive ? ' active' : '');
 
-    const body = document.createElement('div');
-    body.className = 'p-body';
-    const name = document.createElement('div');
-    name.className = 'p-name';
-    name.textContent = p.name || '(無題)';
-    const meta = document.createElement('div');
-    meta.className = 'p-meta';
-    meta.textContent = WORDS.metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
-    body.appendChild(name);
-    body.appendChild(meta);
-    item.appendChild(body);
+  const icon = document.createElement('div');
+  icon.className = 'p-icon';
+  icon.textContent = p.icon || '🧭';
+  item.appendChild(icon);
 
-    const actions = document.createElement('div');
-    actions.className = 'p-actions';
-    const editBtn = document.createElement('button');
-    editBtn.className = 'small';
-    editBtn.textContent = '✏️ 編集';
-    editBtn.addEventListener('click', () => {
+  const body = document.createElement('div');
+  body.className = 'p-body';
+  const name = document.createElement('div');
+  name.className = 'p-name';
+  name.textContent = p.name || '(無題)';
+  const meta = document.createElement('div');
+  meta.className = 'p-meta';
+  meta.textContent = WORDS.metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
+  body.appendChild(name);
+  body.appendChild(meta);
+  item.appendChild(body);
+
+  const actions = document.createElement('div');
+  actions.className = 'p-actions';
+  const editBtn = document.createElement('button');
+  editBtn.className = 'small';
+  editBtn.textContent = '✏️ 編集';
+  editBtn.addEventListener('click', () => {
+    store.activeId = id;
+    saveStore();
+    refreshHeader();
+    renderEdit();
+    switchView('edit');
+  });
+  actions.appendChild(editBtn);
+  if (!isActive) {
+    const useBtn = document.createElement('button');
+    useBtn.className = 'small';
+    useBtn.textContent = '切替のみ';
+    useBtn.addEventListener('click', () => {
       store.activeId = id;
-      saveStore();
-      refreshHeader();
-      renderEdit();
-      switchView('edit');
-    });
-    actions.appendChild(editBtn);
-    if (!isActive) {
-      const useBtn = document.createElement('button');
-      useBtn.className = 'small';
-      useBtn.textContent = '切替のみ';
-      useBtn.addEventListener('click', () => {
-        store.activeId = id;
-        saveStore();
-        refreshHeader();
-        renderPresets();
-      });
-      actions.appendChild(useBtn);
-    }
-    const dupBtn = document.createElement('button');
-    dupBtn.className = 'small';
-    dupBtn.textContent = '複製';
-    dupBtn.addEventListener('click', () => {
-      const copy = JSON.parse(JSON.stringify(p));
-      copy.id = uid();
-      copy.name = p.name + '（コピー）';
-      store.presets[copy.id] = copy;
-      store.activeId = copy.id;
       saveStore();
       refreshHeader();
       renderPresets();
     });
-    actions.appendChild(dupBtn);
-    if (Object.keys(store.presets).length > 1) {
-      const delBtn = document.createElement('button');
-      delBtn.className = 'small';
-      delBtn.textContent = '削除';
-      delBtn.addEventListener('click', () => {
-        if (!confirm('「' + p.name + '」を削除しますか？')) return;
-        delete store.presets[id];
-        if (store.activeId === id) store.activeId = Object.keys(store.presets)[0];
-        saveStore();
-        refreshHeader();
-        renderPresets();
-      });
-      actions.appendChild(delBtn);
-    }
-    item.appendChild(actions);
-    presetList.appendChild(item);
+    actions.appendChild(useBtn);
+  }
+  const dupBtn = document.createElement('button');
+  dupBtn.className = 'small';
+  dupBtn.textContent = '複製';
+  dupBtn.addEventListener('click', () => {
+    const copy = JSON.parse(JSON.stringify(p));
+    copy.id = uid();
+    copy.name = p.name + '（コピー）';
+    store.presets[copy.id] = copy;
+    store.activeId = copy.id;
+    saveStore();
+    refreshHeader();
+    renderPresets();
   });
+  actions.appendChild(dupBtn);
+  if (Object.keys(store.presets).length > 1) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'small';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => {
+      if (!confirm('「' + p.name + '」を削除しますか？')) return;
+      delete store.presets[id];
+      if (store.activeId === id) store.activeId = Object.keys(store.presets)[0];
+      saveStore();
+      refreshHeader();
+      renderPresets();
+    });
+    actions.appendChild(delBtn);
+  }
+  item.appendChild(actions);
+  presetList.appendChild(item);
 }
 
 $('newPresetBtn').addEventListener('click', () => {
