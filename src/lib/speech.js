@@ -49,6 +49,20 @@ export function prepareText(text) {
   return text.replace(/[ 　]+/g, '、');
 }
 
+// iOS(Safari/Chrome)は、ユーザーの操作(タップ)の中で一度も読み上げていないと、あとからタイマー等で呼んだ読み上げを鳴らさない。
+// タップのたびに、音量0の空の読み上げを1回通して「許可」を取っておく（読み上げ中は割り込まない）。
+export function unlockSpeech() {
+  try {
+    if (!speechSupported()) return;
+    const ss = window.speechSynthesis;
+    if (ss.speaking || ss.pending) return;
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    u.lang = 'ja-JP';
+    ss.speak(u);
+  } catch (e) {}
+}
+
 export function speak(text) {
   try {
     if (!speechSupported()) return;
@@ -61,6 +75,10 @@ export function speak(text) {
     if (voice) u.voice = voice;
     u.rate = settings.rate;
     u.pitch = 1.05;
+    // 自動再生が許可されていなかったときは、画面のボタンで聞けるよう知らせる
+    u.onerror = (e) => {
+      if (e && (e.error === 'not-allowed' || e.error === 'audio-busy')) document.dispatchEvent(new CustomEvent('speech-blocked'));
+    };
     window.speechSynthesis.speak(u);
   } catch (e) {}
 }

@@ -16,7 +16,7 @@ import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
 import { WORDS } from './lib/words.js';
 import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
-import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
+import { unlockSpeech, speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -25,7 +25,22 @@ const saveStore = () => persistStore(store);
 const activePreset = () => store.presets[store.activeId];
 
 // 効果音・読み上げは最初のタップで有効化（iOS等の自動再生制限のため）
-document.addEventListener('pointerdown', unlockAudio, { once: true });
+// （効果音・読み上げとも、タップのたびに許可を取り直す。カメラを使ったあとに止まるのを防ぐ）
+document.addEventListener(
+  'pointerdown',
+  () => {
+    unlockAudio();
+    unlockSpeech();
+  },
+  true,
+);
+// 読み上げが自動で鳴らせなかったとき: 「もういちど きく」を数回ぴかっと光らせる
+document.addEventListener('speech-blocked', () => {
+  const b = document.getElementById('speakBtn');
+  b.classList.remove('attention');
+  void b.offsetWidth;
+  b.classList.add('attention');
+});
 
 // ---------- NAV ----------
 const navButtons = document.querySelectorAll('.nav button[data-view]');
