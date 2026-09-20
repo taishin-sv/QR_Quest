@@ -21,6 +21,11 @@ describe('builtinPresets', () => {
       });
     });
   });
+  it('せいかつ → あそび の順に並ぶ', () => {
+    const cats = list.map((p) => p.category);
+    expect(cats.indexOf('あそび')).toBeGreaterThan(cats.lastIndexOf('せいかつ'));
+    expect(CATEGORY_ORDER).toEqual(['せいかつ', 'あそび']);
+  });
   it('「せいかつ」に朝と夜のルーティンがある', () => {
     const names = list.filter((p) => p.category === 'せいかつ').map((p) => p.name);
     expect(names).toEqual(['モーニングルーティン', 'ナイトルーティン']);
@@ -101,8 +106,8 @@ describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
     expect(applyBuiltins(s).changed).toBe(true);
-    expect(Object.keys(s.presets)).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job', 'builtin-morning', 'builtin-night']);
-    expect(s.seeded).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job', 'builtin-morning', 'builtin-night']);
+    expect(Object.keys(s.presets)).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job']);
+    expect(s.seeded).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job']);
     expect(applyBuiltins(s).changed).toBe(false); // 2回目は変化なし
   });
   it('ユーザーが削除したものは復活しない', () => {

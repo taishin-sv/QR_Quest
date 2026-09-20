@@ -4,7 +4,8 @@
 //
 // 内容を直したら該当プリセットの rev を1つ上げる。手を入れていない端末では次回起動時に自動で新しい内容に置き換わり、
 // ユーザーが編集済みのものは上書きしない。
-export const CATEGORY_ORDER = ['あそび', 'せいかつ'];
+// 「毎日のミッションを冒険に」がコンセプトなので、せいかつが先。あそびは応用
+export const CATEGORY_ORDER = ['せいかつ', 'あそび'];
 export const OWN_CATEGORY = 'じぶんの ぼうけん';
 
 // [絵文字, 文章, gives?] の並びから、ゴールまで含むプリセットを組み立てる。
@@ -40,7 +41,7 @@ function themeMission({ id, name, icon, noun, emojis, expert, goalText, mimicTex
 }
 
 export function builtinPresets() {
-  return [
+  const list = [
     themeMission({ id: 'sample-dino', name: 'きょうりゅう', icon: '🦕', noun: 'きょうりゅう', emojis: ['🦕', '🦖'], expert: 'きょうりゅう', rev: 2 }),
     themeMission({ id: 'builtin-insect', name: 'こんちゅう', icon: '🐞', noun: 'こんちゅう', emojis: ['🐞', '🦋'], expert: 'こんちゅう' }),
     themeMission({ id: 'builtin-animal', name: 'どうぶつ', icon: '🐘', noun: 'どうぶつ', emojis: ['🐘', '🦁'], expert: 'どうぶつ' }),
@@ -97,6 +98,8 @@ export function builtinPresets() {
       goal: ['😴', 'ぜんぶ できたね！ おつかれさま。いい ゆめを みてね。おやすみなさい！'],
     }),
   ];
+  // カテゴリー順(せいかつ → あそび)。同じカテゴリー内は上の並びのまま。新規インストールでは先頭(=せいかつ)が最初の選択になる
+  return list.sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
 }
 
 // プリセットの「中身」の署名。編集されたかどうかの判定に使う（名前・アイコン・各ミッションの絵文字/文章/枚数）。
