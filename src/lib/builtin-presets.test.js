@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { builtinPresets, CATEGORY_ORDER } from './builtin-presets.js';
 import { applyBuiltins } from './presets.js';
 
+const byId = (id) => builtinPresets().find((p) => p.id === id);
+
 describe('builtinPresets', () => {
   const list = builtinPresets();
   it('IDが重複せず、カテゴリーが定義済み', () => {
@@ -23,15 +25,22 @@ describe('builtinPresets', () => {
     const names = list.filter((p) => p.category === 'せいかつ').map((p) => p.name);
     expect(names).toEqual(['モーニングルーティン', 'ナイトルーティン']);
   });
+  it('モーニングは「といれ」から始まり、洗顔・カーテンを含まない', () => {
+    const texts = byId('builtin-morning').hints.map((h) => h.text);
+    expect(texts[0]).toBe('といれに いこう');
+    expect(texts[1]).toBe('おきがえを しよう');
+    expect(texts.join('')).not.toContain('あらおう');
+    expect(texts.join('')).not.toContain('カーテン');
+  });
 });
 
 describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
-    expect(applyBuiltins(s)).toBe(true);
+    expect(applyBuiltins(s).changed).toBe(true);
     expect(Object.keys(s.presets)).toEqual(['sample-dino', 'builtin-morning', 'builtin-night']);
     expect(s.seeded).toEqual(['sample-dino', 'builtin-morning', 'builtin-night']);
-    expect(applyBuiltins(s)).toBe(false); // 2回目は変化なし
+    expect(applyBuiltins(s).changed).toBe(false); // 2回目は変化なし
   });
   it('ユーザーが削除したものは復活しない', () => {
     const s = { activeId: '', presets: {} };
@@ -40,12 +49,29 @@ describe('applyBuiltins', () => {
     applyBuiltins(s);
     expect(s.presets['builtin-night']).toBeUndefined();
   });
-  it('手を入れていない旧サンプルは新しい内容に置き換える', () => {
+  it('手を入れていない旧サンプル(恐竜)は新しい内容に置き換える', () => {
     const s = {
       activeId: 'sample-dino',
-      presets: { 'sample-dino': { id: 'sample-dino', name: '旧', stageCount: 1, hints: [{ text: 'たまごの あるところを さがしてね' }, { text: 'x', cardCount: 1 }] } },
+      presets: {
+        'sample-dino': {
+          id: 'sample-dino',
+          name: 'きょうりゅうたんけん（サンプル）',
+          icon: '🦕',
+          stageCount: 5,
+          groupSize: 1,
+          hints: [
+            ['🥚', 'たまごの あるところを さがしてね'],
+            ['🦴', 'つめたいところに かくれているよ'],
+            ['🌋', 'たかいところを みてみよう'],
+            ['💧', 'みずの ちかくを さがしてみて'],
+            ['🪨', 'まるい ものの なかを のぞいてみて'],
+            ['🏆', 'やったー！さいごまで たどりついたね！たからものは ひみつきちの中だよ！'],
+          ].map(([emoji, text]) => ({ emoji, text })),
+        },
+      },
     };
-    applyBuiltins(s);
+    const r = applyBuiltins(s);
+    expect(r.replaced).toEqual(['sample-dino']);
     expect(s.presets['sample-dino'].name).toBe('きょうりゅうミッション');
     expect(s.presets['sample-dino'].category).toBe('あそび');
   });
@@ -54,7 +80,8 @@ describe('applyBuiltins', () => {
       activeId: 'sample-dino',
       presets: { 'sample-dino': { id: 'sample-dino', name: '編集済み', stageCount: 1, hints: [{ text: '自分の文' }, { text: 'x', cardCount: 1 }] } },
     };
-    applyBuiltins(s);
+    const r = applyBuiltins(s);
+    expect(r.replaced).toEqual([]);
     expect(s.presets['sample-dino'].name).toBe('編集済み');
     expect(s.presets['sample-dino'].category).toBe('あそび');
   });
@@ -64,5 +91,64 @@ describe('applyBuiltins', () => {
     applyBuiltins(s);
     expect(s.presets.p1).toBe(own);
     expect(own.category).toBeUndefined();
+  });
+});
+
+describe('applyBuiltins: 内容の改訂(rev)の反映', () => {
+  // 旧版のモーニング(署名なしで配られていたもの)
+  const morningV1 = () => ({
+    id: 'builtin-morning',
+    name: 'モーニングルーティン',
+    icon: '🌅',
+    category: 'せいかつ',
+    stageCount: 7,
+    hints: [
+      ['🌅', 'おはよう！ カーテンを あけて、おひさまに 「おはよう」を しよう'],
+      ['🚽', 'といれに いこう'],
+      ['👕', 'きがえを しよう。じぶんで ふくを えらんでね'],
+      ['🧼', 'かおを あらおう。つめたい みずで しゃきっと！'],
+      ['🍚', 'あさごはんを たべよう。ぜんぶ たべられるかな？'],
+      ['🪥', 'はみがきを しよう。ピカピカに なるまで！'],
+      ['🎒', 'おでかけの じゅんびを しよう。かばんを もってね'],
+      ['🏆', 'ぜんぶ できたね！ すてきな あさだったよ。いってらっしゃい！'],
+    ].map(([emoji, text], i) => (i === 0 ? { emoji, text } : { emoji, text, cardCount: 1 })),
+  });
+
+  it('手を入れていない旧版は新しい内容になり、進行状況の破棄対象に入る', () => {
+    const s = { activeId: 'builtin-morning', presets: { 'builtin-morning': morningV1() }, seeded: ['builtin-morning'] };
+    const r = applyBuiltins(s);
+    expect(r.replaced).toContain('builtin-morning');
+    expect(s.presets['builtin-morning'].hints[0].text).toBe('といれに いこう');
+    expect(s.presets['builtin-morning'].stageCount).toBe(5);
+    expect(s.presets['builtin-morning'].rev).toBe(2);
+  });
+  it('編集済みの旧版はそのまま残す', () => {
+    const old = morningV1();
+    old.hints[1].text = '自分で直した文章';
+    const s = { activeId: 'builtin-morning', presets: { 'builtin-morning': old }, seeded: ['builtin-morning'] };
+    const r = applyBuiltins(s);
+    expect(r.replaced).toEqual([]);
+    expect(s.presets['builtin-morning'].hints[1].text).toBe('自分で直した文章');
+  });
+  it('署名つきで未編集なら rev が上がったときに置き換わり、編集済みなら残る', () => {
+    const s = { activeId: '', presets: {} };
+    applyBuiltins(s); // 追加(署名つき)
+    // 過去の rev 1 の内容だったことにする
+    const cur = s.presets['builtin-night'];
+    cur.rev = 0;
+    expect(applyBuiltins(s).replaced).toEqual(['builtin-night']);
+    // 編集してから rev が上がっても置き換えない
+    const cur2 = s.presets['builtin-night'];
+    cur2.hints[0].text = '直した';
+    cur2.rev = 0;
+    expect(applyBuiltins(s).replaced).toEqual([]);
+    expect(s.presets['builtin-night'].hints[0].text).toBe('直した');
+  });
+  it('現行と同じ内容で署名がないものは、置き換えず署名だけ付ける', () => {
+    const s = { activeId: '', presets: { 'builtin-night': { ...byId('builtin-night'), rev: undefined } }, seeded: ['builtin-night'] };
+    const r = applyBuiltins(s);
+    expect(r.replaced).toEqual([]);
+    expect(s.presets['builtin-night'].baseSig).toBeTruthy();
+    expect(s.presets['builtin-night'].rev).toBe(1);
   });
 });

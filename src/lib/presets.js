@@ -1,5 +1,5 @@
 import { loadJSON, saveJSON } from './storage.js';
-import { builtinPresets, OLD_SAMPLE_FIRST_TEXTS } from './builtin-presets.js';
+import { builtinPresets, contentSig, LEGACY_SIGS } from './builtin-presets.js';
 
 export const ICONS = ['🧭','🗺️','💎','🔑','🏆','🎁','🕵️','🔦','🪙','⭐','🌟','🎯','🐾','🦕','🏴‍☠️','🚀','🐉','🦉','🌋','🍀'];
 export const HINT_EMOJIS = ['🧭','🗺️','💎','🔑','🏆','🎁','🔦','🪙','⭐','🎯','🐾','🚀','🌋','🍀','🔥','💧'];
@@ -41,35 +41,53 @@ export function normalizePreset(p) {
 
 // 組み込みプリセットを反映する。
 //  - まだ持っていないもの: 追加する（一度追加したものは seeded に記録し、ユーザーが削除しても復活させない）
-//  - 以前のサンプル(恐竜)で手を入れていないもの: 新しい内容に置き換える
+//  - 持っているもの: 手を入れていなければ、新しい rev の内容に置き換える（編集済みは触らない）
 //  - category が無い組み込みプリセット: category を付ける
-// 変更があれば true
+// 戻り値: { changed, replaced: 内容を置き換えたプリセットのID一覧 }
 export function applyBuiltins(s) {
   let changed = false;
+  const replaced = [];
   if (!Array.isArray(s.seeded)) {
     s.seeded = [];
     changed = true;
   }
+  const withBase = (b) => ({ ...b, baseSig: contentSig(b) });
   builtinPresets().forEach((b) => {
     const cur = s.presets[b.id];
-    if (cur) {
-      if (b.id === 'sample-dino' && cur.hints && cur.hints[0] && OLD_SAMPLE_FIRST_TEXTS.includes(cur.hints[0].text)) {
-        s.presets[b.id] = b;
-        changed = true;
-      } else if (!cur.category) {
-        cur.category = b.category;
+    if (!cur) {
+      if (!s.seeded.includes(b.id)) {
+        s.presets[b.id] = withBase(b);
         changed = true;
       }
-    } else if (!s.seeded.includes(b.id)) {
-      s.presets[b.id] = b;
-      changed = true;
+    } else {
+      const sigCur = contentSig(cur);
+      let untouched = false;
+      if (cur.baseSig) {
+        untouched = sigCur === cur.baseSig;
+      } else if (sigCur === contentSig(b)) {
+        // 現行と同じ内容 → 署名を記録するだけ（置き換えない）
+        cur.baseSig = sigCur;
+        cur.rev = b.rev;
+        changed = true;
+      } else {
+        untouched = (LEGACY_SIGS[b.id] || []).includes(sigCur);
+      }
+      if (untouched && (cur.rev || 0) < b.rev) {
+        s.presets[b.id] = withBase(b);
+        replaced.push(b.id);
+        changed = true;
+      }
+      if (!s.presets[b.id].category) {
+        s.presets[b.id].category = b.category;
+        changed = true;
+      }
     }
     if (!s.seeded.includes(b.id) && s.presets[b.id]) {
       s.seeded.push(b.id);
       changed = true;
     }
   });
-  return changed;
+  return { changed, replaced };
 }
 
 export function loadStore() {
@@ -79,7 +97,14 @@ export function loadStore() {
     s = { activeId: '', presets: {}, seeded: [] };
     changed = true;
   }
-  if (applyBuiltins(s)) changed = true;
+  const res = applyBuiltins(s);
+  if (res.changed) changed = true;
+  // 内容が置き換わったプリセットは、古い内容の進行状況を破棄する
+  res.replaced.forEach((id) => {
+    try {
+      localStorage.removeItem('advcards_progress_' + id);
+    } catch (e) {}
+  });
   Object.values(s.presets).forEach((p) => p.hints && normalizePreset(p));
   if (!s.activeId || !s.presets[s.activeId]) {
     s.activeId = Object.keys(s.presets)[0];

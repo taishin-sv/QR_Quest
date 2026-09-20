@@ -128,6 +128,8 @@ function renderPresetItem(id) {
   dupBtn.addEventListener('click', () => {
     const copy = JSON.parse(JSON.stringify(p));
     copy.id = uid();
+    delete copy.baseSig;
+    delete copy.rev;
     copy.name = p.name + '（コピー）';
     store.presets[copy.id] = copy;
     store.activeId = copy.id;
@@ -196,6 +198,8 @@ $('importBtn').addEventListener('click', () => {
     if (!data || !data.hints) throw new Error('bad shape');
     const np = JSON.parse(JSON.stringify(data));
     np.id = uid();
+    delete np.baseSig;
+    delete np.rev;
     if (!np.name) np.name = 'インポートしたプリセット';
     if (!np.icon) np.icon = '🧭';
     normalizePreset(np);
