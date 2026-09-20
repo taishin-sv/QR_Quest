@@ -1,4 +1,5 @@
 import { loadJSON, saveJSON } from './storage.js';
+import { recordedFile, playRecorded, stopRecorded } from './recorded.js';
 
 const KEY = 'advcards_voice_v1';
 // separate: ことばの区切り(空白)を読点にして区切って読むか。声によってはオフのほうが自然なイントネーションになる
@@ -50,6 +51,21 @@ export function prepareText(text) {
 }
 
 export function speak(text) {
+  try {
+    stopRecorded();
+    const file = recordedFile(text);
+    if (file) {
+      if (speechSupported()) window.speechSynthesis.cancel();
+      playRecorded(file).then((ok) => {
+        if (!ok) speakWithDevice(text);
+      });
+      return;
+    }
+    speakWithDevice(text);
+  } catch (e) {}
+}
+
+function speakWithDevice(text) {
   try {
     if (!speechSupported()) return;
     const settings = loadVoiceSettings();

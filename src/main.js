@@ -15,6 +15,7 @@ import { BASIC_MISSIONS } from './lib/basic-missions.js';
 import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
 import { WORDS } from './lib/words.js';
+import { loadManifest, recordedCredit } from './lib/recorded.js';
 import { sfx, sfxEnabled, setSfxEnabled, unlockAudio } from './lib/sfx.js';
 import { speak, speechSupported, whenVoicesReady, loadVoiceSettings, saveVoiceSettings } from './lib/speech.js';
 
@@ -981,6 +982,10 @@ if ((loadJSON(NAV_KEY) || {}).hidden) document.body.classList.add('nav-hidden');
 
 // ---------- INIT ----------
 initVoiceSettings();
+loadManifest().then(() => {
+  const c = recordedCredit();
+  if (c) $('voiceCredit').textContent = 'きほんの ミッションの こえ：' + c;
+});
 refreshHeader();
 renderPresets();
 renderEdit();
