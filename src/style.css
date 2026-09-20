@@ -243,3 +243,13 @@ body.nav-hidden .app{ padding-bottom:88px; }
 
 .group-title{ margin:16px 2px 8px; font-size:14px; font-weight:900; color:var(--ink-soft); letter-spacing:0.04em; }
 .group-title:first-child{ margin-top:4px; }
+
+/* 基本ミッションの選択パネル */
+.pick-btn{ margin-top:8px; }
+.picker-panel{ margin:8px 0; padding:12px; border:2px dashed var(--leaf); border-radius:16px; background:var(--panel-2); }
+.picker-title{ font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:8px; }
+.picker-chips{ justify-content:flex-start; gap:8px; }
+.basic-chip{ font-family:inherit; font-size:15px; font-weight:700; padding:10px 14px; border-radius:14px; border:2px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; }
+.basic-chip:active{ background:var(--bg); }
+.basic-chip.blank{ border-style:dashed; color:var(--ink-soft); }
+@media (min-width: 900px){ .basic-chip{ font-size:17px; padding:12px 18px; } }

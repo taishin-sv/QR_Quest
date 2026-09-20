@@ -11,6 +11,7 @@ import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
 import { CATEGORY_ORDER, OWN_CATEGORY } from './lib/builtin-presets.js';
+import { BASIC_MISSIONS } from './lib/basic-missions.js';
 import { moveHint, insertHintAfter, deleteHint } from './lib/hints.js';
 import { fx } from './lib/fx.js';
 import { WORDS } from './lib/words.js';
@@ -330,6 +331,31 @@ function renderEdit() {
     });
     body.appendChild(ta);
 
+    if (!isGoal) {
+      const isOpen = basicPicker && basicPicker.type === 'row' && basicPicker.idx === idx;
+      const pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'small pick-btn';
+      pick.textContent = isOpen ? '✖ とじる' : '📋 きほんから えらぶ';
+      pick.addEventListener('click', () => {
+        basicPicker = isOpen ? null : { type: 'row', idx };
+        scrollToPicker = !isOpen;
+        renderEdit();
+      });
+      body.appendChild(pick);
+      if (isOpen) {
+        body.appendChild(
+          buildPicker((item) => {
+            h.emoji = item.emoji;
+            h.text = item.text;
+            basicPicker = null;
+            pendingFocusRow = idx;
+            renderEdit();
+          }, null),
+        );
+      }
+    }
+
     row.appendChild(body);
 
     // 並べ替え・削除（ゴールは固定）
@@ -368,11 +394,43 @@ function renderEdit() {
       add.className = 'insert-btn';
       add.textContent = '＋ ここに ' + W.hint + 'を ふやす';
       add.disabled = p.stageCount >= 15;
-      add.addEventListener('click', () => editAction(() => insertHintAfter(p, idx)));
+      const insOpen = basicPicker && basicPicker.type === 'ins' && basicPicker.idx === idx;
+      add.addEventListener('click', () => {
+        basicPicker = insOpen ? null : { type: 'ins', idx };
+        scrollToPicker = !insOpen;
+        renderEdit();
+      });
       stageListEl.appendChild(add);
+      if (insOpen) {
+        stageListEl.appendChild(
+          buildPicker(
+            (item) => {
+              const ni = insertHintAfter(p, idx);
+              if (ni < 0) return;
+              p.hints[ni].emoji = item.emoji;
+              p.hints[ni].text = item.text;
+              basicPicker = { type: 'ins', idx: ni }; // つづけて足せるよう、入れた行の次で開いたままにする
+              scrollToPicker = true;
+              renderEdit();
+            },
+            () => {
+              const ni = insertHintAfter(p, idx);
+              if (ni < 0) return;
+              basicPicker = null;
+              pendingFocusRow = ni;
+              renderEdit();
+            },
+          ),
+        );
+      }
     }
   });
 
+  if (scrollToPicker) {
+    scrollToPicker = false;
+    const panel = stageListEl.querySelector('.picker-panel');
+    if (panel) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
   if (pendingFocusRow !== null) {
     const target = stageListEl.querySelector('.stage-row[data-idx="' + pendingFocusRow + '"]');
     pendingFocusRow = null;
@@ -380,9 +438,42 @@ function renderEdit() {
   }
 }
 
+// 基本ミッションの選択パネル。onPick(item) / onBlank(自分で書く。null なら出さない)
+let basicPicker = null; // { type: 'row' | 'ins', idx }
+let scrollToPicker = false;
+function buildPicker(onPick, onBlank) {
+  const panel = document.createElement('div');
+  panel.className = 'picker-panel';
+  const title = document.createElement('div');
+  title.className = 'picker-title';
+  title.textContent = onBlank ? 'えらぶと ここに ふえるよ（つづけて えらべます）' : 'えらぶと この ミッションに いれかわるよ';
+  panel.appendChild(title);
+  const chips = document.createElement('div');
+  chips.className = 'chips picker-chips';
+  BASIC_MISSIONS.forEach((item) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'basic-chip';
+    b.textContent = item.emoji + ' ' + item.label;
+    b.addEventListener('click', () => onPick(item));
+    chips.appendChild(b);
+  });
+  if (onBlank) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'basic-chip blank';
+    b.textContent = '✏️ じぶんで かく';
+    b.addEventListener('click', onBlank);
+    chips.appendChild(b);
+  }
+  panel.appendChild(chips);
+  return panel;
+}
+
 // 並べ替え/挿入/削除の共通処理。fn は動かした後の行の位置(数値)を返す。失敗(false/-1)なら何もしない
 let pendingFocusRow = null;
 function editAction(fn) {
+  basicPicker = null;
   const r = fn();
   if (r === false || r === -1 || r === undefined) return;
   pendingFocusRow = r;
