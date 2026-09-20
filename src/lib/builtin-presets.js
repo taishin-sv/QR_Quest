@@ -21,7 +21,7 @@ function build({ id, name, icon, category, rev, missions, goal }) {
 // 「すきなものを しらべる」共通の4ミッション。theme ごとに名前だけ変える。
 //  1. なまえを 3つ  2. いちばん すきな ものの なまえ  3. すきな ところ・すごい ところを 3つ  4. まねを しよう
 //  「3つ いおう」のミッションは、いった数だけ(3枚)カードをもらう。
-function themeMission({ id, name, icon, noun, emojis, expert, goalText, rev = 1 }) {
+function themeMission({ id, name, icon, noun, emojis, expert, goalText, mimicText, rev = 1 }) {
   const [a, b] = emojis;
   return build({
     id,
@@ -33,7 +33,7 @@ function themeMission({ id, name, icon, noun, emojis, expert, goalText, rev = 1 
       [a, noun + 'の なまえを 3つ いおう', 3],
       [b, 'いちばん すきな ' + noun + 'の なまえを いおう', 1],
       ['🌟', 'その いちばん すきな ' + noun + 'の すきな ところや すごい ところを 3つ いおう', 3],
-      ['🎭', 'その いちばん すきな ' + noun + 'の まねを しよう', 1],
+      ['🎭', mimicText || 'その いちばん すきな ' + noun + 'の まねを しよう', 1],
     ],
     goal: ['🏆', goalText || 'ぜんぶ できたね！ ' + expert + 'はかせ みたいだね！ おめでとう！'],
   });
@@ -54,7 +54,16 @@ export function builtinPresets() {
       emojis: ['👸', '👑'],
       goalText: 'ぜんぶ できたね！ とっても すてきな おひめさまだね！ おめでとう！',
     }),
-    themeMission({ id: 'builtin-sweets', name: 'おかし', icon: '🍰', noun: 'おかし', emojis: ['🍰', '🍪'], expert: 'おかし' }),
+    themeMission({
+      id: 'builtin-sweets',
+      name: 'おかし',
+      icon: '🍰',
+      noun: 'おかし',
+      emojis: ['🍰', '🍪'],
+      expert: 'おかし',
+      mimicText: 'その いちばん すきな おかしを おいしそうに たべる まねを しよう',
+      rev: 2,
+    }),
     themeMission({ id: 'builtin-job', name: 'おしごと', icon: '👩‍🍳', noun: 'おしごと', emojis: ['👩‍🍳', '🧑‍🚒'], expert: 'おしごと' }),
     build({
       id: 'builtin-morning',
