@@ -7,33 +7,44 @@
 export const CATEGORY_ORDER = ['あそび', 'せいかつ'];
 export const OWN_CATEGORY = 'じぶんの ぼうけん';
 
-// [絵文字, 文章] の並びから、ゴールまで含むプリセットを組み立てる
+// [絵文字, 文章, gives?] の並びから、ゴールまで含むプリセットを組み立てる。
+// gives = そのミッションをクリアしたときに渡すカードの枚数(既定1)。次の行の cardCount(=そのミッションの前に読み込む枚数)になる。
 function build({ id, name, icon, category, rev, missions, goal }) {
   const hints = [...missions, goal].map(([emoji, text], i) => {
     const h = { emoji, text };
-    if (i >= 1) h.cardCount = 1;
+    if (i >= 1) h.cardCount = missions[i - 1][2] || 1;
     return h;
   });
   return { id, name, icon, category, rev, stageCount: hints.length - 1, hints };
 }
 
+// 「すきなものを しらべる」共通の4ミッション。theme ごとに名前だけ変える。
+//  1. なまえを 3つ  2. いちばん すきな ものの なまえ  3. すきな ところ・すごい ところを 3つ  4. まねを しよう
+//  「3つ いおう」のミッションは、いった数だけ(3枚)カードをもらう。
+function themeMission({ id, name, icon, noun, emojis, expert, rev = 1 }) {
+  const [a, b] = emojis;
+  return build({
+    id,
+    name: name + 'ミッション',
+    icon,
+    category: 'あそび',
+    rev,
+    missions: [
+      [a, noun + 'の なまえを 3つ いおう', 3],
+      [b, 'いちばん すきな ' + noun + 'の なまえを いおう', 1],
+      ['🌟', 'その いちばん すきな ' + noun + 'の すきな ところや すごい ところを 3つ いおう', 3],
+      ['🎭', 'その いちばん すきな ' + noun + 'の まねを しよう', 1],
+    ],
+    goal: ['🏆', 'ぜんぶ できたね！ ' + expert + 'はかせ みたいだね！ おめでとう！'],
+  });
+}
+
 export function builtinPresets() {
   return [
-    build({
-      id: 'sample-dino',
-      name: 'きょうりゅうミッション',
-      icon: '🦕',
-      category: 'あそび',
-      rev: 1,
-      missions: [
-        ['🥚', 'たまごを だいじに あたためよう！ りょうてで たまごの かたちを つくって 10びょう じっとしてね'],
-        ['🦴', 'きょうりゅうに なりきろう！ 「がおー！」と おおきな こえで ほえよう'],
-        ['🌋', 'かざんが ふんか！ その ばで ジャンプ 5かい！'],
-        ['💧', 'みずを ごくごく のんで ひとやすみ しよう'],
-        ['🪨', 'おおきな いわを もちあげる ポーズを しよう。「うーん！」'],
-      ],
-      goal: ['🏆', 'やったー！ きょうりゅうミッション だいせいこう！ おめでとう！'],
-    }),
+    themeMission({ id: 'sample-dino', name: 'きょうりゅう', icon: '🦕', noun: 'きょうりゅう', emojis: ['🦕', '🦖'], expert: 'きょうりゅう', rev: 2 }),
+    themeMission({ id: 'builtin-insect', name: 'こんちゅう', icon: '🐞', noun: 'こんちゅう', emojis: ['🐞', '🦋'], expert: 'こんちゅう' }),
+    themeMission({ id: 'builtin-animal', name: 'どうぶつ', icon: '🐘', noun: 'どうぶつ', emojis: ['🐘', '🦁'], expert: 'どうぶつ' }),
+    themeMission({ id: 'builtin-fish', name: 'おさかな', icon: '🐟', noun: 'おさかな', emojis: ['🐟', '🐬'], expert: 'おさかな' }),
     build({
       id: 'builtin-morning',
       name: 'モーニングルーティン',
@@ -86,6 +97,15 @@ export const LEGACY_SIGS = {
       ['💧', 'みずの ちかくを さがしてみて'],
       ['🪨', 'まるい ものの なかを のぞいてみて'],
       ['🏆', 'やったー！さいごまで たどりついたね！たからものは ひみつきちの中だよ！'],
+    ]),
+    // きょうりゅうミッション rev1(1つ前の版)
+    sigOf('きょうりゅうミッション', '🦕', [
+      ['🥚', 'たまごを だいじに あたためよう！ りょうてで たまごの かたちを つくって 10びょう じっとしてね'],
+      ['🦴', 'きょうりゅうに なりきろう！ 「がおー！」と おおきな こえで ほえよう'],
+      ['🌋', 'かざんが ふんか！ その ばで ジャンプ 5かい！'],
+      ['💧', 'みずを ごくごく のんで ひとやすみ しよう'],
+      ['🪨', 'おおきな いわを もちあげる ポーズを しよう。「うーん！」'],
+      ['🏆', 'やったー！ きょうりゅうミッション だいせいこう！ おめでとう！'],
     ]),
     // ミッション化直後の版(名前だけ違う)
     sigOf('きょうりゅうミッション（サンプル）', '🦕', [

@@ -34,6 +34,46 @@ describe('builtinPresets', () => {
   });
 });
 
+describe('あそび: すきなものを しらべるミッション(4テーマ)', () => {
+  const themes = builtinPresets().filter((p) => p.category === 'あそび');
+  it('きょうりゅう / こんちゅう / どうぶつ / おさかな の4つ', () => {
+    expect(themes.map((p) => p.name)).toEqual(['きょうりゅうミッション', 'こんちゅうミッション', 'どうぶつミッション', 'おさかなミッション']);
+  });
+  it('4テーマとも同じ構成: 3つ(3枚) → 1つ(1枚) → 3つ(3枚) → まね(1枚) → ゴール', () => {
+    themes.forEach((p) => {
+      expect(p.stageCount).toBe(5 - 1); // ミッション4 + ゴール
+      // 各行の cardCount = そのミッションの前に読み込む枚数（=前のミッションのクリアで渡す枚数）
+      expect(p.hints.map((h) => h.cardCount)).toEqual([undefined, 3, 1, 3, 1]);
+    });
+  });
+  it('文章は共通で、テーマの言葉だけが違う', () => {
+    const dino = themes[0].hints.map((h) => h.text);
+    expect(dino[0]).toBe('きょうりゅうの なまえを 3つ いおう');
+    expect(dino[1]).toBe('いちばん すきな きょうりゅうの なまえを いおう');
+    expect(dino[2]).toBe('その いちばん すきな きょうりゅうの すきな ところや すごい ところを 3つ いおう');
+    expect(dino[3]).toBe('その いちばん すきな きょうりゅうの まねを しよう');
+    expect(themes[1].hints[0].text).toBe('こんちゅうの なまえを 3つ いおう');
+    expect(themes[3].hints[3].text).toBe('その いちばん すきな おさかなの まねを しよう');
+  });
+  it('前の版のきょうりゅうミッション(rev1)は、未編集なら新しい内容に置き換わる', () => {
+    const v1 = [
+      ['🥚', 'たまごを だいじに あたためよう！ りょうてで たまごの かたちを つくって 10びょう じっとしてね'],
+      ['🦴', 'きょうりゅうに なりきろう！ 「がおー！」と おおきな こえで ほえよう'],
+      ['🌋', 'かざんが ふんか！ その ばで ジャンプ 5かい！'],
+      ['💧', 'みずを ごくごく のんで ひとやすみ しよう'],
+      ['🪨', 'おおきな いわを もちあげる ポーズを しよう。「うーん！」'],
+      ['🏆', 'やったー！ きょうりゅうミッション だいせいこう！ おめでとう！'],
+    ].map(([emoji, text], i) => (i === 0 ? { emoji, text } : { emoji, text, cardCount: 1 }));
+    const s = {
+      activeId: 'sample-dino',
+      presets: { 'sample-dino': { id: 'sample-dino', name: 'きょうりゅうミッション', icon: '🦕', category: 'あそび', stageCount: 5, hints: v1 } },
+      seeded: ['sample-dino'],
+    };
+    expect(applyBuiltins(s).replaced).toContain('sample-dino');
+    expect(s.presets['sample-dino'].hints[0].text).toBe('きょうりゅうの なまえを 3つ いおう');
+  });
+});
+
 describe('ナイトルーティン(端末はリビングに置いたまま)', () => {
   it('寝室に端末を持ち込ませるミッションを含まない', () => {
     const texts = byId('builtin-night').hints.map((h) => h.text).join('|');
@@ -50,8 +90,8 @@ describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
     expect(applyBuiltins(s).changed).toBe(true);
-    expect(Object.keys(s.presets)).toEqual(['sample-dino', 'builtin-morning', 'builtin-night']);
-    expect(s.seeded).toEqual(['sample-dino', 'builtin-morning', 'builtin-night']);
+    expect(Object.keys(s.presets)).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-morning', 'builtin-night']);
+    expect(s.seeded).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-morning', 'builtin-night']);
     expect(applyBuiltins(s).changed).toBe(false); // 2回目は変化なし
   });
   it('ユーザーが削除したものは復活しない', () => {
