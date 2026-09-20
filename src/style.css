@@ -256,3 +256,6 @@ body.nav-hidden .app{ padding-bottom:88px; }
 
 .current-preset{ margin:0 0 8px; text-align:center; font-size:14px; font-weight:700; color:var(--ink-soft); }
 @media (min-width: 900px){ .current-preset{ text-align:left; font-size:16px; } }
+
+.row-tools{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.row-tools .pick-btn{ margin-top:0; }

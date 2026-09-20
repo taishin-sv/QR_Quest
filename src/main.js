@@ -329,6 +329,23 @@ function renderEdit() {
     });
     body.appendChild(ta);
 
+    // 文章の下のボタン: 試聴 / きほんから えらぶ
+    const tools = document.createElement('div');
+    tools.className = 'row-tools';
+    const listen = document.createElement('button');
+    listen.type = 'button';
+    listen.className = 'small';
+    listen.textContent = '🔊 きいてみる';
+    listen.addEventListener('click', () => {
+      if (!h.text || !h.text.trim()) {
+        showToast('ぶんしょうを いれてね');
+        return;
+      }
+      speak(h.text);
+    });
+    tools.appendChild(listen);
+    body.appendChild(tools);
+
     if (!isGoal) {
       const isOpen = basicPicker && basicPicker.type === 'row' && basicPicker.idx === idx;
       const pick = document.createElement('button');
@@ -340,7 +357,7 @@ function renderEdit() {
         scrollToPicker = !isOpen;
         renderEdit();
       });
-      body.appendChild(pick);
+      tools.appendChild(pick);
       if (isOpen) {
         body.appendChild(
           buildPicker((item) => {
