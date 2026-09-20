@@ -16,7 +16,7 @@ export default defineConfig({
       manifest: {
         name: 'ぼうけんカード メーカー',
         short_name: 'ぼうけんカード',
-        description: 'QRコードで遊ぶ、親子の宝探しアプリ',
+        description: 'まいにちのミッションを、ぼうけんに。QRカードで進む親子のアプリ',
         lang: 'ja',
         display: 'standalone',
         orientation: 'any',

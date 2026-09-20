@@ -14,8 +14,8 @@
   <header class="hero">
     <span class="egg" id="headerIcon">🧭</span>
     <div>
-      <h1 id="appTitle">ぼうけんカード</h1>
-      <p id="appSub">ミッションを クリアして カードを よみこもう</p>
+      <h1 id="appTitle">ぼうけんカード メーカー</h1>
+      <p id="appSub">まいにちの ミッションを ぼうけんに しよう</p>
     </div>
   </header>
 
@@ -24,7 +24,7 @@
     <div class="card">
       <h2>🎒 プリセット</h2>
       <p class="muted" style="margin-top:-4px;">
-        テーマや冒険ごとに複数つくれます。今つかっているものが「編集」タブの対象になります。
+        まいにちの ミッションを ぼうけんに。テーマごとに えらべます。「✏️ 編集」で ミッションを つくりかえられます。
       </p>
       <div id="presetList"></div>
       <button class="ghost" id="newPresetBtn">＋ 新しいプリセットをつくる</button>
@@ -65,9 +65,9 @@
     <button class="ghost" id="backToPresetsBtn" style="margin-bottom:4px;">← プリセットにもどる</button>
     <div class="edit-side">
     <div class="card">
-      <h2>🧭 プリセットの設定</h2>
-      <label for="presetName">プリセットの なまえ</label>
-      <input type="text" id="presetName" placeholder="れい：ゆうた たんけんたい（きょうりゅう）">
+      <h2>🧭 ぼうけんの せってい</h2>
+      <label for="presetName">ぼうけんの なまえ</label>
+      <input type="text" id="presetName" placeholder="れい：ゆうたの あさの ぼうけん">
 
       <label>アイコン</label>
       <div class="emoji-picker" id="iconPicker"></div>
@@ -116,6 +116,7 @@
 
   <!-- ========== PLAY ========== -->
   <section id="view-play" class="view">
+    <p class="current-preset" id="currentPreset"></p>
     <div id="playEmpty" class="empty" style="display:none;">
       <span class="ic">🧭</span>
       まだミッションが ほぞんされていません。<br>「編集」タブで つくってね。

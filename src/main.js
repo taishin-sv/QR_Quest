@@ -45,9 +45,7 @@ $('backToPresetsBtn').addEventListener('click', () => switchView('presets'));
 
 function refreshHeader() {
   const p = activePreset();
-  $('appSub').textContent = WORDS.appSub;
-  $('headerIcon').textContent = p.icon || '🧭';
-  $('appTitle').textContent = p.name || 'ぼうけんカード';
+  $('currentPreset').textContent = (p.icon || '🧭') + ' ' + (p.name || 'ぼうけん');
 }
 
 // ---------- PRESETS TAB ----------
