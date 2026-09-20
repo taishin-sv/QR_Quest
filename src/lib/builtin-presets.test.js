@@ -34,10 +34,19 @@ describe('builtinPresets', () => {
   });
 });
 
-describe('あそび: すきなものを しらべるミッション(4テーマ)', () => {
+describe('あそび: すきなものを しらべるミッション(8テーマ)', () => {
   const themes = builtinPresets().filter((p) => p.category === 'あそび');
-  it('きょうりゅう / こんちゅう / どうぶつ / おさかな の4つ', () => {
-    expect(themes.map((p) => p.name)).toEqual(['きょうりゅうミッション', 'こんちゅうミッション', 'どうぶつミッション', 'おさかなミッション']);
+  it('きょうりゅう / こんちゅう / どうぶつ / おさかな / おはな / おひめさま / おかし / おしごと の8つ', () => {
+    expect(themes.map((p) => p.name)).toEqual([
+      'きょうりゅうミッション',
+      'こんちゅうミッション',
+      'どうぶつミッション',
+      'おさかなミッション',
+      'おはなミッション',
+      'おひめさまミッション',
+      'おかしミッション',
+      'おしごとミッション',
+    ]);
   });
   it('4テーマとも同じ構成: 3つ(3枚) → 1つ(1枚) → 3つ(3枚) → まね(1枚) → ゴール', () => {
     themes.forEach((p) => {
@@ -90,8 +99,8 @@ describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
     expect(applyBuiltins(s).changed).toBe(true);
-    expect(Object.keys(s.presets)).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-morning', 'builtin-night']);
-    expect(s.seeded).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-morning', 'builtin-night']);
+    expect(Object.keys(s.presets)).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job', 'builtin-morning', 'builtin-night']);
+    expect(s.seeded).toEqual(['sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job', 'builtin-morning', 'builtin-night']);
     expect(applyBuiltins(s).changed).toBe(false); // 2回目は変化なし
   });
   it('ユーザーが削除したものは復活しない', () => {
