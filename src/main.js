@@ -917,6 +917,12 @@ voiceRate.addEventListener('input', () => {
   $('voiceRateVal').textContent = rateLabel(rate);
   saveVoiceSettings({ ...loadVoiceSettings(), rate });
 });
+const separateToggle = $('separateToggle');
+separateToggle.checked = loadVoiceSettings().separate !== false;
+separateToggle.addEventListener('change', () => {
+  saveVoiceSettings({ ...loadVoiceSettings(), separate: separateToggle.checked });
+  speak('こんにちは。ミッションを はじめよう');
+});
 $('voiceTestBtn').addEventListener('click', () => speak('こんにちは。ミッションを はじめよう'));
 
 const sfxToggle = $('sfxToggle');

@@ -1,7 +1,8 @@
 import { loadJSON, saveJSON } from './storage.js';
 
 const KEY = 'advcards_voice_v1';
-const DEFAULTS = { voiceURI: '', rate: 0.85 };
+// separate: ことばの区切り(空白)を読点にして区切って読むか。声によってはオフのほうが自然なイントネーションになる
+const DEFAULTS = { voiceURI: '', rate: 0.85, separate: true };
 
 export const speechSupported = () => 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
 
@@ -55,7 +56,7 @@ export function speak(text) {
     const voices = getJaVoices();
     const voice = voices.find((v) => v.voiceURI === settings.voiceURI) || voices[0];
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(prepareText(text));
+    const u = new SpeechSynthesisUtterance(settings.separate === false ? text : prepareText(text));
     u.lang = 'ja-JP';
     if (voice) u.voice = voice;
     u.rate = settings.rate;
