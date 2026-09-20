@@ -120,7 +120,7 @@ describe('applyBuiltins: 内容の改訂(rev)の反映', () => {
     expect(r.replaced).toContain('builtin-morning');
     expect(s.presets['builtin-morning'].hints[0].text).toBe('といれに いこう');
     expect(s.presets['builtin-morning'].stageCount).toBe(5);
-    expect(s.presets['builtin-morning'].rev).toBe(2);
+    expect(s.presets['builtin-morning'].rev).toBe(byId('builtin-morning').rev);
   });
   it('編集済みの旧版はそのまま残す', () => {
     const old = morningV1();

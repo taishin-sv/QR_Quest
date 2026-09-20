@@ -11,7 +11,7 @@ export const BASIC_MISSIONS = [
   { emoji: '🍽️', label: 'ばんごはん', text: 'ばんごはんを たべよう。ぜんぶ たべられるかな？' },
   { emoji: '🛁', label: 'おふろ', text: 'おふろに はいろう。あたまも あらってね' },
   { emoji: '🧸', label: 'かたづけ', text: 'おもちゃを もとの ばしょに かたづけよう' },
-  { emoji: '🎒', label: 'おでかけじゅんび', text: 'おでかけの じゅんびを しよう。かばんを もってね' },
+  { emoji: '🎒', label: 'みじたく', text: 'みじたくを しよう。てぃっしゅと はんかちは もった？' },
   { emoji: '👟', label: 'くつ', text: 'くつを はこう' },
   { emoji: '🥛', label: 'おみず', text: 'おみずを のもう' },
   { emoji: '🪮', label: 'かみ', text: 'かみを とかそう' },
