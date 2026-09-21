@@ -119,6 +119,27 @@ function renderPresetItem(id) {
   const isActive = id === store.activeId;
   const item = document.createElement('div');
   item.className = 'preset-item' + (isActive ? ' active' : '');
+  // カード本体をタップ(ボタン以外)すると、このプリセットに切り替える
+  const select = () => {
+    if (store.activeId === id) return;
+    store.activeId = id;
+    saveStore();
+    refreshHeader();
+    renderPresets();
+    showToast('✅ 「' + (p.name || 'ぼうけん') + '」に きりかえたよ');
+  };
+  item.setAttribute('role', 'button');
+  item.tabIndex = 0;
+  item.addEventListener('click', (e) => {
+    if (e.target.closest('.p-actions')) return; // 右側のボタンは、それぞれの動作
+    select();
+  });
+  item.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target === item) {
+      e.preventDefault();
+      select();
+    }
+  });
 
   const icon = document.createElement('div');
   icon.className = 'p-icon';
@@ -152,18 +173,6 @@ function renderPresetItem(id) {
     switchView('edit');
   });
   actions.appendChild(editBtn);
-  if (!isActive) {
-    const useBtn = document.createElement('button');
-    useBtn.className = 'small';
-    useBtn.textContent = '切替のみ';
-    useBtn.addEventListener('click', () => {
-      store.activeId = id;
-      saveStore();
-      refreshHeader();
-      renderPresets();
-    });
-    actions.appendChild(useBtn);
-  }
   // すすみぐあいを最初に戻す（進行不能になったときの手動のリセット。親が使う）
   if (prog && prog.currentStage) {
     const resetBtn = document.createElement('button');
