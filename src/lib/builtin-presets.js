@@ -67,6 +67,25 @@ export function builtinPresets() {
       mimicText: 'その いちばん すきな おかしを おいしそうに たべる まねを しよう',
       rev: 2,
     }),
+    themeMission({
+      id: 'builtin-fruit',
+      name: 'くだもの',
+      icon: '🍎',
+      noun: 'くだもの',
+      emojis: ['🍎', '🍌'],
+      expert: 'くだもの',
+      mimicText: 'その いちばん すきな くだものを おいしそうに たべる まねを しよう',
+    }),
+    themeMission({
+      id: 'builtin-food',
+      name: 'たべもの',
+      icon: '🍙',
+      noun: 'たべもの',
+      emojis: ['🍙', '🍜'],
+      expert: 'たべもの',
+      mimicText: 'その いちばん すきな たべものを おいしそうに たべる まねを しよう',
+    }),
+    themeMission({ id: 'builtin-vehicle', name: 'のりもの', icon: '🚌', noun: 'のりもの', emojis: ['🚌', '🚄'], expert: 'のりもの' }),
     // おでかけの おもいでを ことばにする。場所の名前(知識)ではなく、自分の経験を話す
     build({
       id: 'builtin-outing',
