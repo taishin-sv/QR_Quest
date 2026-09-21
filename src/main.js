@@ -665,14 +665,16 @@ function renderProgressPanel() {
   progressPanel.innerHTML = '';
   const p = activePreset();
   const stage = progress.currentStage;
-  if (stage > p.stageCount) {
-    progressPanel.style.display = 'none';
-    return;
-  }
   progressPanel.style.display = 'flex';
 
   const title = document.createElement('div');
   title.className = 'progress-title';
+  if (stage > p.stageCount) {
+    // ゴール済み: もう一度あそぶには、スタートカードを読み込む
+    title.textContent = '🏆 ぼうけんは おわったよ。スタートカードで もういちど あそべるよ';
+    progressPanel.appendChild(title);
+    return;
+  }
   if (stage === 0) {
     title.textContent = '🚩 まずは スタートカードを よみとってね';
     progressPanel.appendChild(title);
@@ -801,7 +803,8 @@ function handleScan(n) {
     const want = r ? (r.from === r.to ? '#' + r.from : '#' + r.from + '〜#' + r.to) : '';
     const msgs = {
       notStarted: '🚩 さいしょは スタートカードを よみとってね',
-      alreadyStarted: '🚩 スタートは もう よみとったよ',
+      alreadyStarted: '🚩 スタートは もう よみとったよ。' + want + ' を よみこんでね',
+      finished: '🏆 ぼうけんは おわったよ。スタートカードで もういちど あそべるよ',
       wrongStage: WORDS.wrongStage(n, want),
       outOfRange: '#' + n + ' は このぼうけんの カードじゃないよ',
     };

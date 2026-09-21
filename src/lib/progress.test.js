@@ -44,6 +44,32 @@ describe('applyScan', () => {
   });
 });
 
+describe('ゴール済みの状態(進行不能の再発防止)', () => {
+  it('ゴール済みでスタートカードを読むと、最初からやり直せる', () => {
+    const p = preset([1, 1]);
+    const pr = { currentStage: 3, found: [] }; // stageCount=2 なので、3 はゴール済み
+    expect(applyScan(p, pr, 0)).toMatchObject({ event: 'start', restarted: true });
+    expect(pr.currentStage).toBe(1);
+    expect(applyScan(p, pr, 1).event).toBe('clear');
+  });
+  it('ゴール済みで他のカードを読むと「おわったよ」', () => {
+    const p = preset([1, 1]);
+    const pr = { currentStage: 3, found: [] };
+    expect(applyScan(p, pr, 1)).toEqual({ event: 'ignored', reason: 'finished' });
+  });
+  it('プリセットを直してミッション数が減り、保存済みの進行が範囲外になっても、スタートカードでやり直せる', () => {
+    const p = preset([1, 1]);
+    const pr = { currentStage: 8, found: [] };
+    expect(applyScan(p, pr, 0).event).toBe('start');
+  });
+  it('進行中にスタートカードを読んでも進行は変わらない', () => {
+    const p = preset([1, 1]);
+    const pr = { currentStage: 2, found: [] };
+    expect(applyScan(p, pr, 0)).toEqual({ event: 'ignored', reason: 'alreadyStarted' });
+    expect(pr.currentStage).toBe(2);
+  });
+});
+
 describe('normalizeProgress (自己修復)', () => {
   it('全部見つけ済みで止まった保存データを未見つけに戻す', () => {
     const p = preset([3, 3]);

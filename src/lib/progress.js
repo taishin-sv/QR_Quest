@@ -21,18 +21,21 @@ export function normalizeProgress(p, progress) {
 }
 
 // カードn（0=スタート）を読み取った結果を progress に反映して、何が起きたかを返す。
-// event: 'ignored'(reason: notStarted|alreadyStarted|outOfRange|wrongStage) | 'start' | 'dup' | 'found' | 'clear' | 'goal'
+// event: 'ignored'(reason: notStarted|alreadyStarted|finished|outOfRange|wrongStage) | 'start' | 'dup' | 'found' | 'clear' | 'goal'
+// スタートカードは、始める前だけでなく、ぼうけんが終わったあと(ゴール済み)に読ませると、最初からやり直しになる。
 export function applyScan(p, progress, n) {
+  const finished = progress.currentStage > p.stageCount;
   if (n === 0) {
-    if (progress.currentStage !== 0) return { event: 'ignored', reason: 'alreadyStarted' };
+    if (progress.currentStage !== 0 && !finished) return { event: 'ignored', reason: 'alreadyStarted' };
     progress.currentStage = 1;
     progress.found = [];
     normalizeProgress(p, progress);
-    return { event: 'start', revealIdx: 0 };
+    return { event: 'start', revealIdx: 0, restarted: finished };
   }
 
   const stage = stageOfCard(p, n);
   if (progress.currentStage === 0) return { event: 'ignored', reason: 'notStarted' };
+  if (finished) return { event: 'ignored', reason: 'finished' };
   if (stage < 1 || !p.hints[stage]) return { event: 'ignored', reason: 'outOfRange' };
   if (stage !== progress.currentStage) return { event: 'ignored', reason: 'wrongStage' };
 
