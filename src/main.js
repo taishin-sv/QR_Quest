@@ -737,6 +737,7 @@ function startCamera() {
       video.srcObject = s;
       video.setAttribute('playsinline', true);
       video.play();
+      unlockAudio(); // カメラを使い始めると音声セッションが切り替わることがあるので、効果音側も復帰させておく
       scanning = true;
       camMsg.textContent = '';
       requestAnimationFrame(scanLoop);

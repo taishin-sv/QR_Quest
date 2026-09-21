@@ -9,15 +9,55 @@ export function setSfxEnabled(enabled) {
   saveJSON(KEY, { enabled });
 }
 
+// iOSは、Web Audio(効果音)が「消音(サイレント)モード」や、カメラ・読み上げによる音声セッションの切り替えで無音になる一方、
+// 読み上げは鳴る、ということが起きる。次の2つで「再生用」の音声セッションに固定する。
+//  1) Audio Session API(iOS 16.4+): navigator.audioSession.type = 'playback'
+//  2) 無音のaudio要素をループ再生しておく（古いiOS向けの定番の回避策。ユーザー操作の中で開始する）
+let keepAlive = null;
+function silentWavUrl() {
+  const n = 800; // 8kHz × 0.1秒
+  const buf = new ArrayBuffer(44 + n * 2);
+  const v = new DataView(buf);
+  const w = (o, str) => [...str].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF');
+  v.setUint32(4, 36 + n * 2, true);
+  w(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, 8000, true);
+  v.setUint32(28, 16000, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  w(36, 'data');
+  v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, i % 2 ? 1 : -1, true); // ほぼ無音(±1)
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+function keepAudioSession() {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+  } catch (e) {}
+  try {
+    if (!keepAlive) {
+      keepAlive = new Audio(silentWavUrl());
+      keepAlive.loop = true;
+      keepAlive.setAttribute('playsinline', '');
+    }
+    if (keepAlive.paused) keepAlive.play().catch(() => {});
+  } catch (e) {}
+}
+
 // iOS/Safari などは、ユーザー操作の中で一度AudioContextを起こしておく必要がある
 export function unlockAudio() {
   try {
+    keepAudioSession();
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       ctx = new AC();
     }
-    if (ctx.state === 'suspended' || ctx.state === 'interrupted') ctx.resume();
+    if (ctx.state !== 'running') ctx.resume();
   } catch (e) {}
 }
 
@@ -26,6 +66,21 @@ function tones(notes, { type = 'triangle', gain = 0.22 } = {}) {
   if (!sfxEnabled()) return;
   unlockAudio();
   if (!ctx) return;
+  // 動いていない(suspended/interrupted)ときは、再開できてから鳴らす（間に合わなければ諦める）
+  if (ctx.state !== 'running') {
+    const c = ctx;
+    const started = Date.now();
+    Promise.resolve(c.resume())
+      .then(() => {
+        if (c.state === 'running' && Date.now() - started < 1500) play(notes, type, gain);
+      })
+      .catch(() => {});
+    return;
+  }
+  play(notes, type, gain);
+}
+
+function play(notes, type, gain) {
   const t0 = ctx.currentTime + 0.02;
   notes.forEach(([freq, start, dur]) => {
     const osc = ctx.createOscillator();
