@@ -40,7 +40,6 @@ describe('applyScan', () => {
     applyScan(p, pr, 0);
     expect(applyScan(p, pr, 3)).toEqual({ event: 'ignored', reason: 'wrongStage' }); // 次ステージのカード
     expect(applyScan(p, pr, 99)).toEqual({ event: 'ignored', reason: 'outOfRange' });
-    expect(applyScan(p, pr, 0)).toEqual({ event: 'ignored', reason: 'alreadyStarted' }); // スタート再読み取り
   });
 });
 
@@ -62,27 +61,34 @@ describe('ゴール済みの状態(進行不能の再発防止)', () => {
     const pr = { currentStage: 8, found: [] };
     expect(applyScan(p, pr, 0).event).toBe('start');
   });
-  it('進行中にスタートカードを読んでも進行は変わらない', () => {
-    const p = preset([1, 1]);
-    const pr = { currentStage: 2, found: [] };
-    expect(applyScan(p, pr, 0)).toEqual({ event: 'ignored', reason: 'alreadyStarted' });
-    expect(pr.currentStage).toBe(2);
+});
+
+describe('スタートカードは、いつ読み込んでも最初からやり直し', () => {
+  it('進行中(カードを何枚か読んだ途中)でも、最初に戻る', () => {
+    const p = preset([3, 1]);
+    const pr = newProgress();
+    applyScan(p, pr, 0);
+    applyScan(p, pr, 1);
+    applyScan(p, pr, 2); // 1ステージ目の途中(3枚中2枚)
+    expect(applyScan(p, pr, 0)).toMatchObject({ event: 'start', restarted: true });
+    expect(pr.currentStage).toBe(1);
+    expect(pr.found).toEqual([false, false, false]);
+  });
+  it('最初の読み込みは「やり直し」ではない', () => {
+    expect(applyScan(preset([1]), newProgress(), 0)).toMatchObject({ event: 'start', restarted: false });
+  });
+  it('どの時刻・状態でも同じ(古い進行でも新しい進行でも)', () => {
+    const p = preset([1, 1, 1]);
+    const HOUR = 60 * 60 * 1000;
+    [1000 + HOUR, 1000 + 30 * HOUR].forEach((now) => {
+      const pr = { currentStage: 2, found: [], updatedAt: 1000 };
+      expect(applyScan(p, pr, 0, now).event).toBe('start');
+      expect(pr.currentStage).toBe(1);
+    });
   });
 });
 
 describe('進行不能からの復帰', () => {
-  const HOUR = 60 * 60 * 1000;
-  it('途中のまま6時間以上たっていたら、スタートカードで最初からやり直せる', () => {
-    const p = preset([1, 1, 1]);
-    const pr = { currentStage: 2, found: [], updatedAt: 1000 };
-    expect(applyScan(p, pr, 0, 1000 + 6 * HOUR)).toMatchObject({ event: 'start', restarted: true });
-    expect(pr.currentStage).toBe(1);
-  });
-  it('6時間未満なら、進行中のスタートカードは無視する', () => {
-    const p = preset([1, 1, 1]);
-    const pr = { currentStage: 2, found: [], updatedAt: 1000 };
-    expect(applyScan(p, pr, 0, 1000 + 5 * HOUR)).toEqual({ event: 'ignored', reason: 'alreadyStarted' });
-  });
   it('スキャンするたびに更新時刻が進む', () => {
     const p = preset([2, 1]);
     const pr = newProgress();

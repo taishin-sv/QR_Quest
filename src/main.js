@@ -821,7 +821,6 @@ function handleScan(n) {
     const want = r ? (r.from === r.to ? '#' + r.from : '#' + r.from + '〜#' + r.to) : '';
     const msgs = {
       notStarted: '🚩 さいしょは スタートカードを よみとってね',
-      alreadyStarted: '🚩 スタートは もう よみとったよ。' + want + ' を よみこんでね',
       finished: '🏆 ぼうけんは おわったよ。スタートカードで もういちど あそべるよ',
       wrongStage: WORDS.wrongStage(n, want),
       outOfRange: '#' + n + ' は このぼうけんの カードじゃないよ',
