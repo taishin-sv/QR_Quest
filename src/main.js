@@ -106,7 +106,9 @@ function renderPresetItem(id) {
   name.textContent = p.name || '(無題)';
   const meta = document.createElement('div');
   meta.className = 'p-meta';
-  meta.textContent = WORDS.metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + (isActive ? '・つかってる' : '');
+  const prog = loadJSON('advcards_progress_' + id);
+  const progLabel = prog && prog.currentStage ? (prog.currentStage > p.stageCount ? '・おわった' : '・とちゅう') : '';
+  meta.textContent = WORDS.metaUnit + p.stageCount + '個・' + 'カード' + totalCards(p) + 'まい' + progLabel + (isActive ? '・つかってる' : '');
   body.appendChild(name);
   body.appendChild(meta);
   item.appendChild(body);
@@ -135,6 +137,22 @@ function renderPresetItem(id) {
       renderPresets();
     });
     actions.appendChild(useBtn);
+  }
+  // すすみぐあいを最初に戻す（進行不能になったときの手動のリセット。親が使う）
+  if (prog && prog.currentStage) {
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'small';
+    resetBtn.textContent = '🔄 やりなおし';
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('「' + p.name + '」の すすみぐあいを さいしょに もどしますか？')) return;
+      try {
+        localStorage.removeItem('advcards_progress_' + id);
+      } catch (e) {}
+      if (id === store.activeId) progress = newProgress();
+      showToast('✅ さいしょに もどしたよ');
+      renderPresets();
+    });
+    actions.appendChild(resetBtn);
   }
   const dupBtn = document.createElement('button');
   dupBtn.className = 'small';
