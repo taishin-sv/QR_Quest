@@ -77,6 +77,8 @@ describe('あそび: すきなものを しらべるミッション(11テーマ)
       expect(p.hints[3].text).toBe('その いちばん すきな ' + noun + 'を おいしそうに たべる まねを しよう');
     });
     expect(themes.find((t) => t.name === 'のりものミッション').hints[3].text).toBe('その いちばん すきな のりものの まねを しよう');
+    // おはなは「まね」が難しいので「おうた」
+    expect(themes.find((t) => t.name === 'おはなミッション').hints[3].text).toBe('その いちばん すきな おはなの おうたを うたおう');
   });
   it('おでかけ: 行った場所を3つ(3枚) → いちばん → なにをした → つぎは(各1枚)', () => {
     const outing = themes.find((p) => p.id === 'builtin-outing');

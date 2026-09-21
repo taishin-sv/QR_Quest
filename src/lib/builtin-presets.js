@@ -48,7 +48,16 @@ export function builtinPresets() {
     themeMission({ id: 'builtin-insect', name: 'こんちゅう', icon: '🐞', noun: 'こんちゅう', emojis: ['🐞', '🦋'], expert: 'こんちゅう' }),
     themeMission({ id: 'builtin-animal', name: 'どうぶつ', icon: '🐘', noun: 'どうぶつ', emojis: ['🐘', '🦁'], expert: 'どうぶつ' }),
     themeMission({ id: 'builtin-fish', name: 'おさかな', icon: '🐟', noun: 'おさかな', emojis: ['🐟', '🐬'], expert: 'おさかな' }),
-    themeMission({ id: 'builtin-flower', name: 'おはな', icon: '🌷', noun: 'おはな', emojis: ['🌷', '🌻'], expert: 'おはな' }),
+    themeMission({
+      id: 'builtin-flower',
+      name: 'おはな',
+      icon: '🌷',
+      noun: 'おはな',
+      emojis: ['🌷', '🌻'],
+      expert: 'おはな',
+      mimicText: 'その いちばん すきな おはなの おうたを うたおう',
+      rev: 2,
+    }),
     themeMission({
       id: 'builtin-princess',
       name: 'おひめさま',
