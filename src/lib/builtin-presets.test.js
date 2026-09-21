@@ -39,9 +39,9 @@ describe('builtinPresets', () => {
   });
 });
 
-describe('あそび: すきなものを しらべるミッション(7テーマ)', () => {
+describe('あそび: すきなものを しらべるミッション(8テーマ)', () => {
   const themes = builtinPresets().filter((p) => p.category === 'あそび');
-  it('きょうりゅう / こんちゅう / どうぶつ / おさかな / おはな / おひめさま / おかし の7つ', () => {
+  it('きょうりゅう / こんちゅう / どうぶつ / おさかな / おはな / おひめさま / おかし / おでかけ の8つ', () => {
     expect(themes.map((p) => p.name)).toEqual([
       'きょうりゅうミッション',
       'こんちゅうミッション',
@@ -50,10 +50,11 @@ describe('あそび: すきなものを しらべるミッション(7テーマ)'
       'おはなミッション',
       'おひめさまミッション',
       'おかしミッション',
+      'おでかけミッション',
     ]);
   });
-  it('4テーマとも同じ構成: 3つ(3枚) → 1つ(1枚) → 3つ(3枚) → まね(1枚) → ゴール', () => {
-    themes.forEach((p) => {
+  it('「すきなもの」の7テーマは同じ構成: 3つ(3枚) → 1つ(1枚) → 3つ(3枚) → まね(1枚) → ゴール', () => {
+    themes.filter((p) => p.id !== 'builtin-outing').forEach((p) => {
       expect(p.stageCount).toBe(5 - 1); // ミッション4 + ゴール
       // 各行の cardCount = そのミッションの前に読み込む枚数（=前のミッションのクリアで渡す枚数）
       expect(p.hints.map((h) => h.cardCount)).toEqual([undefined, 3, 1, 3, 1]);
@@ -69,6 +70,17 @@ describe('あそび: すきなものを しらべるミッション(7テーマ)'
     expect(themes[3].hints[3].text).toBe('その いちばん すきな おさかなの まねを しよう');
     // おかしだけは「たべる まね」
     expect(themes[6].hints[3].text).toBe('その いちばん すきな おかしを おいしそうに たべる まねを しよう');
+  });
+  it('おでかけ: 行った場所を3つ(3枚) → いちばん → なにをした → つぎは(各1枚)', () => {
+    const outing = themes.find((p) => p.id === 'builtin-outing');
+    expect(outing.hints.map((h) => h.cardCount)).toEqual([undefined, 3, 1, 1, 1]);
+    expect(outing.hints.map((h) => h.text)).toEqual([
+      'いった ことが ある ばしょを 3つ いおう',
+      'いちばん たのしかった ばしょを いおう',
+      'そこで なにを した？',
+      'また いったら つぎは なにを したい？',
+      'ぜんぶ できたね！ たのしい おもいでが いっぱいだね！ おめでとう！',
+    ]);
   });
   it('前の版のきょうりゅうミッション(rev1)は、未編集なら新しい内容に置き換わる', () => {
     const v1 = [
@@ -143,8 +155,8 @@ describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
     expect(applyBuiltins(s).changed).toBe(true);
-    expect(Object.keys(s.presets)).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets']);
-    expect(s.seeded).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets']);
+    expect(Object.keys(s.presets)).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-outing']);
+    expect(s.seeded).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-outing']);
     expect(applyBuiltins(s).changed).toBe(false); // 2回目は変化なし
   });
   it('ユーザーが削除したものは復活しない', () => {
