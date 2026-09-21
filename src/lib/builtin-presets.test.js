@@ -39,9 +39,9 @@ describe('builtinPresets', () => {
   });
 });
 
-describe('あそび: すきなものを しらべるミッション(8テーマ)', () => {
+describe('あそび: すきなものを しらべるミッション(7テーマ)', () => {
   const themes = builtinPresets().filter((p) => p.category === 'あそび');
-  it('きょうりゅう / こんちゅう / どうぶつ / おさかな / おはな / おひめさま / おかし / おしごと の8つ', () => {
+  it('きょうりゅう / こんちゅう / どうぶつ / おさかな / おはな / おひめさま / おかし の7つ', () => {
     expect(themes.map((p) => p.name)).toEqual([
       'きょうりゅうミッション',
       'こんちゅうミッション',
@@ -50,7 +50,6 @@ describe('あそび: すきなものを しらべるミッション(8テーマ)'
       'おはなミッション',
       'おひめさまミッション',
       'おかしミッション',
-      'おしごとミッション',
     ]);
   });
   it('4テーマとも同じ構成: 3つ(3枚) → 1つ(1枚) → 3つ(3枚) → まね(1枚) → ゴール', () => {
@@ -102,12 +101,50 @@ describe('ナイトルーティン(端末はリビングに置いたまま)', ()
   });
 });
 
+describe('applyBuiltins: 組み込みから外したプリセット(おしごと)', () => {
+  const jobPreset = (edited) => {
+    const p = {
+      id: 'builtin-job',
+      name: 'おしごとミッション',
+      icon: '👩‍🍳',
+      category: 'あそび',
+      rev: 1,
+      stageCount: 4,
+      hints: [
+        { emoji: 'a', text: 'おしごとの なまえを 3つ いおう' },
+        { emoji: 'b', text: 'x', cardCount: 3 },
+        { emoji: 'c', text: 'y', cardCount: 1 },
+        { emoji: 'd', text: 'z', cardCount: 3 },
+        { emoji: 'e', text: 'g', cardCount: 1 },
+      ],
+    };
+    p.baseSig = JSON.stringify([p.name, p.icon, p.hints.map((h, i) => [h.emoji, h.text, i === 0 ? 0 : h.cardCount || 1])]);
+    if (edited) p.hints[1].text = '自分で直した';
+    return p;
+  };
+  it('手を入れていなければ取り除かれる', () => {
+    const s = { activeId: 'builtin-job', presets: { 'builtin-job': jobPreset(false) }, seeded: ['builtin-job'] };
+    expect(applyBuiltins(s).removed).toEqual(['builtin-job']);
+    expect(s.presets['builtin-job']).toBeUndefined();
+  });
+  it('編集済みなら残す', () => {
+    const s = { activeId: 'builtin-job', presets: { 'builtin-job': jobPreset(true) }, seeded: ['builtin-job'] };
+    expect(applyBuiltins(s).removed).toEqual([]);
+    expect(s.presets['builtin-job']).toBeTruthy();
+  });
+  it('新規インストールには入らない', () => {
+    const s = { activeId: '', presets: {} };
+    applyBuiltins(s);
+    expect(s.presets['builtin-job']).toBeUndefined();
+  });
+});
+
 describe('applyBuiltins', () => {
   it('新規: 全て追加され seeded に記録される', () => {
     const s = { activeId: '', presets: {} };
     expect(applyBuiltins(s).changed).toBe(true);
-    expect(Object.keys(s.presets)).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job']);
-    expect(s.seeded).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets', 'builtin-job']);
+    expect(Object.keys(s.presets)).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets']);
+    expect(s.seeded).toEqual(['builtin-morning', 'builtin-night', 'sample-dino', 'builtin-insect', 'builtin-animal', 'builtin-fish', 'builtin-flower', 'builtin-princess', 'builtin-sweets']);
     expect(applyBuiltins(s).changed).toBe(false); // 2回目は変化なし
   });
   it('ユーザーが削除したものは復活しない', () => {

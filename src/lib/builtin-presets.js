@@ -6,6 +6,8 @@
 // ユーザーが編集済みのものは上書きしない。
 // 「毎日のミッションを冒険に」がコンセプトなので、せいかつが先。あそびは応用
 export const CATEGORY_ORDER = ['せいかつ', 'あそび'];
+// 組み込みから外したプリセットのID。端末に残っていて手を入れていなければ、次回起動時に取り除く(編集済みは残す)
+export const RETIRED_IDS = ['builtin-job'];
 export const OWN_CATEGORY = 'じぶんの ぼうけん';
 
 // [絵文字, 文章, gives?] の並びから、ゴールまで含むプリセットを組み立てる。
@@ -65,7 +67,6 @@ export function builtinPresets() {
       mimicText: 'その いちばん すきな おかしを おいしそうに たべる まねを しよう',
       rev: 2,
     }),
-    themeMission({ id: 'builtin-job', name: 'おしごと', icon: '👩‍🍳', noun: 'おしごと', emojis: ['👩‍🍳', '🧑‍🚒'], expert: 'おしごと' }),
     build({
       id: 'builtin-morning',
       name: 'モーニングルーティン',

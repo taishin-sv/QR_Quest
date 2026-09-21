@@ -1,5 +1,5 @@
 import { loadJSON, saveJSON } from './storage.js';
-import { builtinPresets, contentSig, LEGACY_SIGS } from './builtin-presets.js';
+import { builtinPresets, contentSig, LEGACY_SIGS, RETIRED_IDS } from './builtin-presets.js';
 
 export const ICONS = ['🧭','🗺️','💎','🔑','🏆','🎁','🕵️','🔦','🪙','⭐','🌟','🎯','🐾','🦕','🏴‍☠️','🚀','🐉','🦉','🌋','🍀'];
 export const HINT_EMOJIS = ['🧭','🗺️','💎','🔑','🏆','🎁','🔦','🪙','⭐','🎯','🐾','🚀','🌋','🍀','🔥','💧'];
@@ -43,10 +43,20 @@ export function normalizePreset(p) {
 //  - まだ持っていないもの: 追加する（一度追加したものは seeded に記録し、ユーザーが削除しても復活させない）
 //  - 持っているもの: 手を入れていなければ、新しい rev の内容に置き換える（編集済みは触らない）
 //  - category が無い組み込みプリセット: category を付ける
-// 戻り値: { changed, replaced: 内容を置き換えたプリセットのID一覧 }
+// 戻り値: { changed, replaced: 内容を置き換えたID一覧, removed: 取り除いたID一覧 }
 export function applyBuiltins(s) {
   let changed = false;
   const replaced = [];
+  const removed = [];
+  // 組み込みから外したもの: 手を入れていなければ取り除く
+  RETIRED_IDS.forEach((id) => {
+    const cur = s.presets[id];
+    if (cur && cur.baseSig && contentSig(cur) === cur.baseSig) {
+      delete s.presets[id];
+      removed.push(id);
+      changed = true;
+    }
+  });
   if (!Array.isArray(s.seeded)) {
     s.seeded = [];
     changed = true;
@@ -87,7 +97,7 @@ export function applyBuiltins(s) {
       changed = true;
     }
   });
-  return { changed, replaced };
+  return { changed, replaced, removed };
 }
 
 export function loadStore() {
@@ -100,7 +110,7 @@ export function loadStore() {
   const res = applyBuiltins(s);
   if (res.changed) changed = true;
   // 内容が置き換わったプリセットは、古い内容の進行状況を破棄する
-  res.replaced.forEach((id) => {
+  res.replaced.concat(res.removed).forEach((id) => {
     try {
       localStorage.removeItem('advcards_progress_' + id);
     } catch (e) {}
