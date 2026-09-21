@@ -63,6 +63,32 @@ function refreshHeader() {
   $('currentPreset').textContent = (p.icon || '🧭') + ' ' + (p.name || 'ぼうけん');
 }
 
+// ---------- 長押し ----------
+// 押し続けて ms たったら onDone。途中で離したら、案内(hint)だけ出す。押している間は .pressing を付ける(進み具合の表示用)
+const LONG_PRESS_MS = 800;
+function onLongPress(el, ms, hint, onDone) {
+  let timer = null;
+  const cancel = () => {
+    clearTimeout(timer);
+    timer = null;
+    el.classList.remove('pressing');
+  };
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    el.classList.add('pressing');
+    timer = setTimeout(() => {
+      cancel();
+      onDone();
+    }, ms);
+  });
+  el.addEventListener('pointerup', () => {
+    if (timer) showToast(hint);
+    cancel();
+  });
+  ['pointercancel', 'pointerleave'].forEach((ev) => el.addEventListener(ev, cancel));
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
 // ---------- PRESETS TAB ----------
 const presetList = $('presetList');
 // カテゴリー(あそび → せいかつ → その他 → じぶんの ぼうけん)の順に並べる
@@ -171,10 +197,11 @@ function renderPresetItem(id) {
   });
   actions.appendChild(dupBtn);
   if (Object.keys(store.presets).length > 1) {
+    // 子どもが誤って消さないよう、長押しでだけ削除できる(そのあと確認も出す)
     const delBtn = document.createElement('button');
-    delBtn.className = 'small';
-    delBtn.textContent = '削除';
-    delBtn.addEventListener('click', () => {
+    delBtn.className = 'small hold-btn';
+    delBtn.textContent = '削除（長押し）';
+    onLongPress(delBtn, LONG_PRESS_MS, 'けすには ながおし（ぎゅーっと おしつづける）', () => {
       if (!confirm('「' + p.name + '」を削除しますか？')) return;
       delete store.presets[id];
       if (store.activeId === id) store.activeId = Object.keys(store.presets)[0];
@@ -978,7 +1005,6 @@ $('camFlipBtn').addEventListener('click', () => {
 // ---------- MENU COLLAPSE (子どもが触っても画面が変わらないように、メニューを隠せる) ----------
 // 隠す: メニューの「かくす」。再表示: 左下(タブレットは左下)の 🔒 を長押し。タップだけのときは案内を出す。
 const NAV_KEY = 'advcards_navhidden_v1';
-const LONG_PRESS_MS = 800;
 function setNavHidden(hidden) {
   document.body.classList.toggle('nav-hidden', hidden);
   saveJSON(NAV_KEY, { hidden });
