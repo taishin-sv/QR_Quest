@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ライセンス表記 - ぼうけんカード メーカー</title>
+<style>
+  :root{ --bg:#F4ECD8; --panel:#FFFBF0; --ink:#1F2A1E; --ink-soft:#4B5B45; --line:rgba(31,42,30,0.14); --leaf:#3F7350; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0F2119; --panel:#16302A; --ink:#F4ECD8; --ink-soft:#C9D8C2; --line:rgba(244,236,216,0.14); --leaf:#4C7A57; }
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.7; }
+  .wrap{ max-width:720px; margin:0 auto; padding:32px 20px 60px; }
+  h1{ font-size:22px; margin:0 0 8px; }
+  h2{ font-size:16px; margin:32px 0 4px; border-top:1px solid var(--line); padding-top:20px; }
+  p.lead{ color:var(--ink-soft); font-size:14px; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; margin:10px 0 6px; }
+  th,td{ text-align:left; padding:6px 8px 6px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  a{ color:var(--leaf); }
+  code{ background:var(--panel); padding:1px 5px; border-radius:4px; font-size:13px; }
+  .note{ font-size:13px; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ライセンス表記</h1>
+  <p class="lead">「ぼうけんカード メーカー」が使用しているオープンソースソフトウェア・フォントの一覧です。</p>
+
+  <h2>このアプリ自体について</h2>
+  <p class="note">© 株式会社（社名は後日確定）. All rights reserved.<br>
+  本アプリのソースコード（<code>src/</code> 配下等の独自実装）は、下記の第三者ソフトウェアを除き、権利者の許諾なく複製・再配布・改変することはできません。</p>
+
+  <h2>QRコードについて</h2>
+  <p class="note">「QRコード」は株式会社デンソーウェーブの登録商標です。同社はQRコードの特許権を行使しない旨を表明しており、本アプリでの生成・印刷物への利用は自由に行えます。</p>
+
+  <h2>利用しているソフトウェア</h2>
+  <table>
+    <tr><th>名称</th><th>用途</th><th>ライセンス</th></tr>
+    <tr><td>qrcode</td><td>QRコード画像の生成</td><td><a href="licenses/mit-qrcode.txt">MIT</a></td></tr>
+    <tr><td>jsQR</td><td>カメラ映像からのQRコード読み取り</td><td><a href="licenses/apache-2.0-jsqr.txt">Apache License 2.0</a></td></tr>
+    <tr><td>html2canvas</td><td>カードデザインの画像化（印刷用PDF作成）</td><td><a href="licenses/mit-html2canvas.txt">MIT</a></td></tr>
+    <tr><td>jsPDF</td><td>印刷用PDFの組み立て</td><td><a href="licenses/mit-jspdf.txt">MIT</a></td></tr>
+  </table>
+
+  <h2>利用しているフォント</h2>
+  <table>
+    <tr><th>名称</th><th>ライセンス</th></tr>
+    <tr><td>Zen Maru Gothic（The Zen Maru Gothic Authors）</td><td><a href="licenses/ofl-1.1-zen-maru-gothic.txt">SIL Open Font License 1.1</a></td></tr>
+  </table>
+
+  <p class="note" style="margin-top:32px;">各ライセンス全文はリンク先を参照してください。記載内容に誤りがある場合はご連絡ください。</p>
+</div>
+</body>
+</html>
