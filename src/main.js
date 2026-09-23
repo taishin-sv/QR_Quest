@@ -24,6 +24,20 @@ let store = loadStore();
 const saveStore = () => persistStore(store);
 const activePreset = () => store.presets[store.activeId];
 
+// このアプリを開いたまま新しい版をプッシュすると、あとから読み込む部品(PDF機能など)のファイル名が
+// サーバー上から消えて読み込めなくなることがある(Viteのビルドごとのファイル名変更による)。
+// その場合は、今すぐ再読み込みして最新の版を取り直す（無限ループにならないよう、1回だけ試す）。
+window.addEventListener('vite:preloadError', () => {
+  const KEY = 'advcards_reload_once_v1';
+  if (sessionStorage.getItem(KEY)) return; // 再読み込みしても直らない = 通信そのものの問題
+  sessionStorage.setItem(KEY, '1');
+  showToast('🔄 さいしんの ばんに こうしんしています…');
+  setTimeout(() => location.reload(), 600);
+});
+try {
+  sessionStorage.removeItem('advcards_reload_once_v1');
+} catch (e) {}
+
 // 効果音・読み上げは最初のタップで有効化（iOS等の自動再生制限のため）
 // （効果音・読み上げとも、タップのたびに許可を取り直す。カメラを使ったあとに止まるのを防ぐ）
 document.addEventListener(
