@@ -30,3 +30,34 @@ export function stageOfCard(p, cardNumber) {
   }
   return 0;
 }
+
+// ---------- せんたくミッション（5枚のうち条件に合う枚数だけを選ぶ） ----------
+// hints[stage].choice があれば、そのステージは「選ぶ」ミッション。
+// choice は cardsInStage(p, stage) と同じ長さの配列で、各要素が { emoji, label, correct } を持つ
+// （position は 0 始まり。絶対カード番号は rangeOfStage(p, stage).from + position）。
+// correct でない位置（おとり）をスキャンしても、正解として数えない（何度でも選び直せる）。
+
+export function choiceOfStage(p, stage) {
+  const h = p.hints && p.hints[stage];
+  const c = h && h.choice;
+  return Array.isArray(c) && c.length === cardsInStage(p, stage) ? c : null;
+}
+
+export function isChoiceStage(p, stage) {
+  return !!choiceOfStage(p, stage);
+}
+
+// カード番号(そのステージ内の絶対番号)が、正解として数えるものかどうか。
+// せんたくミッションでなければ、範囲内のカードはすべて正解（従来どおり）。
+export function isCorrectCard(p, stage, cardNumber) {
+  const choice = choiceOfStage(p, stage);
+  if (!choice) return true;
+  const pos = cardNumber - rangeOfStage(p, stage).from;
+  return !!(choice[pos] && choice[pos].correct);
+}
+
+// そのステージを終えるのに必要な「正解」の枚数（せんたくミッションでなければ全枚数）
+export function requiredCountInStage(p, stage) {
+  const choice = choiceOfStage(p, stage);
+  return choice ? choice.filter((c) => c.correct).length : cardsInStage(p, stage);
+}

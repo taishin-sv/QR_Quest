@@ -6,7 +6,7 @@ import './style.css';
 import jsQR from 'jsqr';
 import { loadJSON, saveJSON } from './lib/storage.js';
 import { ICONS, HINT_EMOJIS, uid, makeHints, newHint, normalizePreset, loadStore, saveStore as persistStore } from './lib/presets.js';
-import { rangeOfStage, cardsInStage, totalCards, MAX_CARDS_PER_HINT } from './lib/stages.js';
+import { rangeOfStage, cardsInStage, totalCards, MAX_CARDS_PER_HINT, choiceOfStage, requiredCountInStage } from './lib/stages.js';
 import { encodeCard, parseCard, qrDataURL } from './lib/qr.js';
 import { newProgress, normalizeProgress, applyScan } from './lib/progress.js';
 import { exportPdf } from './lib/pdf.js';
@@ -288,6 +288,99 @@ const stageListEl = $('stageList');
 const saveBtn = $('saveBtn');
 const saveMsg = $('saveMsg');
 
+// h.choice の長さを n に合わせる（増えた分は空、減った分は末尾を切る）
+function resizeChoice(h, n) {
+  const cur = h.choice || [];
+  h.choice = Array.from({ length: n }, (_, i) => cur[i] || { emoji: '', label: '', correct: false });
+}
+
+// 「よみこむカード」欄の下に付ける、せんたくミッション（5枚のうち条件に合うものだけ選ぶ）の編集UI。
+// onToggle は on/off が切り替わったときだけ呼ぶ（文字入力のたびには呼ばない＝入力中にフォーカスが飛ばないように）
+function buildChoiceEditor(h, n, onToggle) {
+  const wrap = document.createElement('div');
+  wrap.className = 'choice-editor';
+
+  const toggleRow = document.createElement('label');
+  toggleRow.className = 'check-row';
+  const toggle = document.createElement('input');
+  toggle.type = 'checkbox';
+  toggle.checked = Array.isArray(h.choice) && h.choice.length === n;
+  toggleRow.appendChild(toggle);
+  toggleRow.appendChild(document.createTextNode('🎯 えらぶ ミッションに する（' + n + 'まいの中から、あう ものだけ 正解に する）'));
+  wrap.appendChild(toggleRow);
+
+  if (!toggle.checked) {
+    toggle.addEventListener('change', () => {
+      if (toggle.checked) resizeChoice(h, n);
+      onToggle();
+    });
+    return wrap;
+  }
+  toggle.addEventListener('change', () => {
+    if (!toggle.checked) delete h.choice;
+    onToggle();
+  });
+
+  const hint = document.createElement('p');
+  hint.className = 'muted choice-hint';
+  wrap.appendChild(hint);
+  const updateHint = () => {
+    const correctN = h.choice.filter((o) => o.correct).length;
+    hint.textContent =
+      correctN === 0
+        ? '⚠️ 「これが せいかい」を すくなくとも 1つ、えらんでね'
+        : correctN === n
+          ? '⚠️ ぜんぶ 正解だと、えらぶ いみが なくなるよ。1つ以上は 「ちがう もの」に してね'
+          : '✅ ' + correctN + 'まいが 正解（のこり ' + (n - correctN) + 'まいは、まちがえやすい ダミー）';
+  };
+
+  const rows = document.createElement('div');
+  rows.className = 'choice-rows';
+  h.choice.forEach((opt, i) => {
+    const row = document.createElement('div');
+    row.className = 'choice-row';
+
+    const em = document.createElement('input');
+    em.type = 'text';
+    em.className = 'choice-emoji';
+    em.placeholder = '❓';
+    em.maxLength = 4;
+    em.value = opt.emoji || '';
+    em.addEventListener('input', () => {
+      opt.emoji = em.value;
+    });
+    row.appendChild(em);
+
+    const lb = document.createElement('input');
+    lb.type = 'text';
+    lb.className = 'choice-label';
+    lb.placeholder = 'れい：かさ';
+    lb.value = opt.label || '';
+    lb.addEventListener('input', () => {
+      opt.label = lb.value;
+    });
+    row.appendChild(lb);
+
+    const okLabel = document.createElement('label');
+    okLabel.className = 'choice-ok';
+    const ok = document.createElement('input');
+    ok.type = 'checkbox';
+    ok.checked = !!opt.correct;
+    ok.addEventListener('change', () => {
+      opt.correct = ok.checked;
+      onToggle(); // 行の見出し（「〇まい えらぶ」）にも反映させる
+    });
+    okLabel.appendChild(ok);
+    okLabel.appendChild(document.createTextNode('せいかい'));
+    row.appendChild(okLabel);
+
+    rows.appendChild(row);
+  });
+  wrap.appendChild(rows);
+  updateHint();
+  return wrap;
+}
+
 function renderEdit() {
   const p = activePreset();
   const W = WORDS;
@@ -316,7 +409,10 @@ function renderEdit() {
   const cardsPhrase = (s) => {
     const r = rangeOfStage(p, s);
     const n = r.to - r.from + 1;
-    return n <= 1 ? 'カード#' + r.from : 'カード#' + r.from + '〜#' + r.to + '（' + n + 'まい全部）';
+    if (n <= 1) return 'カード#' + r.from;
+    const required = requiredCountInStage(p, s);
+    const countText = choiceOfStage(p, s) ? required + 'まい えらぶ' : n + 'まい全部';
+    return 'カード#' + r.from + '〜#' + r.to + '（' + countText + '）';
   };
 
   stageListEl.innerHTML = '';
@@ -361,13 +457,17 @@ function renderEdit() {
         o.textContent = n + 'まい';
         sel.appendChild(o);
       }
-      sel.value = String(cardsInStage(p, idx));
+      const n0 = cardsInStage(p, idx);
+      sel.value = String(n0);
       sel.addEventListener('change', () => {
         h.cardCount = parseInt(sel.value, 10);
+        if (Array.isArray(h.choice)) resizeChoice(h, h.cardCount);
         renderEdit();
       });
       countWrap.appendChild(sel);
       body.appendChild(countWrap);
+
+      if (n0 >= 2) body.appendChild(buildChoiceEditor(h, n0, () => renderEdit()));
     }
 
     const picker = document.createElement('div');
@@ -697,15 +797,33 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
 }
 
-// カード番号のチップ。found(i) が true のものは「みつけた」表示
-function cardChips(from, to, found) {
+// カード番号のチップ。found(i) が true のものは「みつけた」表示。
+// choice があれば、せんたくミッション用に絵文字+名前も出す（正解かどうかは表示しない＝当てさせる）
+function cardChips(from, to, found, choice) {
   const wrap = document.createElement('div');
-  wrap.className = 'chips';
+  wrap.className = 'chips' + (choice ? ' choice-chips' : '');
   for (let n = from; n <= to; n++) {
-    const done = !!(found && found(n - from));
+    const pos = n - from;
+    const done = !!(found && found(pos));
+    const opt = choice && choice[pos];
     const chip = document.createElement('div');
-    chip.className = 'card-chip' + (done ? ' done' : '');
-    chip.textContent = (done ? '✅ ' : '') + '#' + n;
+    chip.className = 'card-chip' + (done ? ' done' : '') + (opt ? ' with-option' : '');
+    if (opt) {
+      const em = document.createElement('span');
+      em.className = 'option-emoji';
+      em.textContent = opt.emoji || '❓';
+      const lb = document.createElement('span');
+      lb.className = 'option-label';
+      lb.textContent = (done ? '✅ ' : '') + (opt.label || '');
+      const num = document.createElement('span');
+      num.className = 'option-num';
+      num.textContent = '#' + n;
+      chip.appendChild(em);
+      chip.appendChild(lb);
+      chip.appendChild(num);
+    } else {
+      chip.textContent = (done ? '✅ ' : '') + '#' + n;
+    }
     wrap.appendChild(chip);
   }
   return wrap;
@@ -733,14 +851,16 @@ function renderProgressPanel() {
 
   const r = rangeOfStage(p, stage);
   const g = r.to - r.from + 1;
-  title.textContent = WORDS.scanTitle(g);
+  const choice = choiceOfStage(p, stage);
+  const required = requiredCountInStage(p, stage);
+  title.textContent = choice ? WORDS.choiceScanTitle(g, required) : WORDS.scanTitle(g);
   progressPanel.appendChild(title);
-  progressPanel.appendChild(cardChips(r.from, r.to, (i) => progress.found[i]));
-  if (g > 1) {
+  progressPanel.appendChild(cardChips(r.from, r.to, (i) => progress.found[i], choice));
+  if (required > 1) {
     const doneCount = progress.found.filter(Boolean).length;
     const txt = document.createElement('div');
     txt.className = 'progress-text';
-    txt.textContent = doneCount + ' / ' + g + ' まい みつかった';
+    txt.textContent = doneCount + ' / ' + required + ' つ みつかった';
     progressPanel.appendChild(txt);
   }
 }
@@ -863,6 +983,12 @@ function handleScan(n) {
   saveJSON(progressKey(), progress);
   renderProgressPanel();
 
+  if (res.event === 'wrongChoice') {
+    sfx.dup();
+    const opt = choiceOfStage(p, res.stage)?.[res.pos];
+    showToast(WORDS.wrongChoice(opt));
+    return;
+  }
   if (res.event === 'dup') {
     sfx.dup();
     showToast(WORDS.dup(n));
@@ -909,11 +1035,13 @@ function showReveal(idx) {
   nextEl.innerHTML = '';
   if (!isGoal) {
     const nr = rangeOfStage(p, idx + 1);
+    const nextChoice = choiceOfStage(p, idx + 1);
+    const nextRequired = requiredCountInStage(p, idx + 1);
     const label = document.createElement('div');
     label.className = 'progress-title';
-    label.textContent = WORDS.nextLabel(nr.to > nr.from);
+    label.textContent = nextChoice ? WORDS.nextLabelChoice(nr.to - nr.from + 1, nextRequired) : WORDS.nextLabel(nr.to > nr.from);
     nextEl.appendChild(label);
-    nextEl.appendChild(cardChips(nr.from, nr.to, null));
+    nextEl.appendChild(cardChips(nr.from, nr.to, null, nextChoice));
     const range = nr.to > nr.from ? '#' + nr.from + '〜#' + nr.to : '#' + nr.from;
     $('backToScanLabel').textContent = range + 'の カードを よみこむ';
   }
